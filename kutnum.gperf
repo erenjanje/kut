@@ -1,0 +1,26 @@
+%struct-type
+%define hash-function-name kutnum_dispatchHash
+%define lookup-function-name kutnum_dispatchLookup
+%compare-lengths
+%compare-strncmp
+%readonly-tables
+%define initializer-suffix ,empty_dispatched
+%includes
+struct KutDispatchGperfPair
+%%
++, kutnum_add
+-, kutnum_sub
+*, kutnum_mul
+/, kutnum_div
+sin, kutnum_sin
+cos, kutnum_cos
+tan, kutnum_tan
+cot, kutnum_cot
+asin, kutnum_asin
+acos, kutnum_acos
+atan, kutnum_atan
+atan2, kutnum_atan2
+acot, kutnum_acot
+mutlak-değer, kutnum_abs
+referans-ekle, kutnum_addref
+referans-çıkar, kutnum_decref

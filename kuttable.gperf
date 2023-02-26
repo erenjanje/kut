@@ -1,0 +1,15 @@
+%struct-type
+%define hash-function-name kuttable_dispatchHash
+%define lookup-function-name kuttable_dispatchLookup
+%compare-lengths
+%compare-strncmp
+%readonly-tables
+%define initializer-suffix ,empty_dispatched
+%includes
+struct KutDispatchGperfPair
+%%
+ekle, kuttable_insert
+sonuna-ekle, kuttable_append
+sil, kuttable_delete
+referans-ekle, kuttable_addref
+referans-çıkar, kuttable_decref
