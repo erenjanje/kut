@@ -5,11 +5,11 @@ OBJ_EXTENSION=o
 RUNNER=
 
 INCDIR=.
-SRCDIR=.
-OBJDIR=.
+SRCDIR=interpreter
+OBJDIR=obj
 BUILDDIR=.
 BINDIR=.
-SRCS = $(wildcard $(SRCDIR)/*.$(SRC_EXTENSION))
+SRCS = $(wildcard $(SRCDIR)/*.$(SRC_EXTENSION)) $(wildcard ./*.$(SRC_EXTENSION))
 OBJS = $(patsubst $(SRCDIR)/%.$(SRC_EXTENSION), $(OBJDIR)/%.$(OBJ_EXTENSION), $(SRCS))
 DEPENDS = $(patsubst $(SRCDIR)/%.$(SRC_EXTENSION),%.d,$(SRCS))
 HEADERS = $(wildcard $(INCDIR)/*.h)
