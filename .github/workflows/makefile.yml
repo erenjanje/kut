@@ -19,3 +19,6 @@ jobs:
     
     - name: Create method files
       run: make gperf
+    
+    - name: zort
+      run: ls -R
