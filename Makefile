@@ -37,6 +37,9 @@ build: $(OBJS)
 symbols: $(EXECNAME)
 	@nm $(EXECNAME)
 
+gperf: $(METHODFILES)
+	@echo
+.PHONY:
 
 clean:
 	@$(RM) -f $(OBJS) $(METHODFILES)
