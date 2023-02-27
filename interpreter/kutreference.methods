@@ -1,0 +1,68 @@
+/* ANSI-C code produced by gperf version 3.1 */
+/* Command-line: gperf --output-file interpreter/kutreference.methods interpreter/kutreference.gperf  */
+/* Computed positions: -k'' */
+
+#line 9 "interpreter/kutreference.gperf"
+struct KutDispatchGperfPair;
+#include <string.h>
+
+#define TOTAL_KEYWORDS 2
+#define MIN_WORD_LENGTH 13
+#define MAX_WORD_LENGTH 16
+#define MIN_HASH_VALUE 13
+#define MAX_HASH_VALUE 16
+/* maximum key range = 4, duplicates = 0 */
+
+#ifdef __GNUC__
+__inline
+#else
+#ifdef __cplusplus
+inline
+#endif
+#endif
+/*ARGSUSED*/
+static unsigned int
+kutreference_dispatchHash (register const char *str, register size_t len)
+{
+  return len;
+}
+
+const struct KutDispatchGperfPair *
+kutreference_dispatchLookup (register const char *str, register size_t len)
+{
+  static const unsigned char lengthtable[] =
+    {
+       0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 13,
+       0,  0, 16
+    };
+  static const struct KutDispatchGperfPair wordlist[] =
+    {
+      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched},
+#line 11 "interpreter/kutreference.gperf"
+      {"referans-ekle", kutreference_addref},
+      {"",empty_dispatched}, {"",empty_dispatched},
+#line 12 "interpreter/kutreference.gperf"
+      {"referans-\303\247\304\261kar", kutreference_decref}
+    };
+
+  if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
+    {
+      register unsigned int key = kutreference_dispatchHash (str, len);
+
+      if (key <= MAX_HASH_VALUE)
+        if (len == lengthtable[key])
+          {
+            register const char *s = wordlist[key].name;
+
+            if (*str == *s && !memcmp (str + 1, s + 1, len - 1))
+              return &wordlist[key];
+          }
+    }
+  return 0;
+}

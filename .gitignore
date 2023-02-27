@@ -51,6 +51,3 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-
-# GPerf compiled method table getters
-*.methods

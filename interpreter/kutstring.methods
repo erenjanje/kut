@@ -1,0 +1,73 @@
+/* ANSI-C code produced by gperf version 3.1 */
+/* Command-line: gperf --output-file interpreter/kutstring.methods interpreter/kutstring.gperf  */
+/* Computed positions: -k'' */
+
+#line 9 "interpreter/kutstring.gperf"
+struct KutDispatchGperfPair;
+#include <string.h>
+
+#define TOTAL_KEYWORDS 5
+#define MIN_WORD_LENGTH 1
+#define MAX_WORD_LENGTH 16
+#define MIN_HASH_VALUE 1
+#define MAX_HASH_VALUE 16
+/* maximum key range = 16, duplicates = 0 */
+
+#ifdef __GNUC__
+__inline
+#else
+#ifdef __cplusplus
+inline
+#endif
+#endif
+/*ARGSUSED*/
+static unsigned int
+kutstring_dispatchHash (register const char *str, register size_t len)
+{
+  return len;
+}
+
+const struct KutDispatchGperfPair *
+kutstring_dispatchLookup (register const char *str, register size_t len)
+{
+  static const unsigned char lengthtable[] =
+    {
+       0,  1,  0,  0,  0,  5,  0,  0,  8,  0,  0,  0,  0, 13,
+       0,  0, 16
+    };
+  static const struct KutDispatchGperfPair wordlist[] =
+    {
+      {"",empty_dispatched},
+#line 11 "interpreter/kutstring.gperf"
+      {"=", kutstring_equal},
+      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched},
+#line 12 "interpreter/kutstring.gperf"
+      {"e\305\237it", kutstring_equal},
+      {"",empty_dispatched}, {"",empty_dispatched},
+#line 13 "interpreter/kutstring.gperf"
+      {"k\304\261yasla", kutstring_compare},
+      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched}, {"",empty_dispatched},
+#line 14 "interpreter/kutstring.gperf"
+      {"referans-ekle", kutstring_addref},
+      {"",empty_dispatched}, {"",empty_dispatched},
+#line 15 "interpreter/kutstring.gperf"
+      {"referans-\303\247\304\261kar", kutstring_decref}
+    };
+
+  if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
+    {
+      register unsigned int key = kutstring_dispatchHash (str, len);
+
+      if (key <= MAX_HASH_VALUE)
+        if (len == lengthtable[key])
+          {
+            register const char *s = wordlist[key].name;
+
+            if (*str == *s && !memcmp (str + 1, s + 1, len - 1))
+              return &wordlist[key];
+          }
+    }
+  return 0;
+}
