@@ -10,3 +10,4 @@ struct KutDispatchGperfPair
 %%
 referans-ekle, kutfunc_addref
 referans-çıkar, kutfunc_decref
+metin-yap, kutfunc_tostring

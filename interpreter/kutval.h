@@ -16,18 +16,18 @@ typedef union KutData {
     void* data;
 } KutData;
 
-typedef KutValue (*KutDispatchedFn)(KutData self, KutTable* args);
-typedef KutDispatchedFn (*KutDispatchFn)(KutData self, KutString* message);
+typedef KutValue (*KutDispatchedFn)(KutValue* self, KutTable* args);
+typedef KutDispatchedFn (*KutDispatchFn)(KutValue* self, KutString* message);
 
-KutValue empty_dispatched(KutData self, KutTable* args); // TODO: Remove me!
+KutValue empty_dispatched(KutValue* self, KutTable* args); // TODO: Remove me!
 
-KutDispatchedFn kutundefined_dispatch(KutData self, KutString* message);
-KutDispatchedFn kutboolean_dispatch(KutData self, KutString* message);
-KutDispatchedFn kutnumber_dispatch(KutData self, KutString* message);
-KutDispatchedFn kutreference_dispatch(KutData self, KutString* message);
-KutDispatchedFn kutstring_dispatch(KutData self, KutString* message);
-KutDispatchedFn kutfunc_dispatch(KutData self, KutString* message);
-KutDispatchedFn kuttable_dispatch(KutData self, KutString* message);
+KutDispatchedFn kutundefined_dispatch(KutValue* self, KutString* message);
+KutDispatchedFn kutboolean_dispatch(KutValue* self, KutString* message);
+KutDispatchedFn kutnumber_dispatch(KutValue* self, KutString* message);
+KutDispatchedFn kutreference_dispatch(KutValue* self, KutString* message);
+KutDispatchedFn kutstring_dispatch(KutValue* self, KutString* message);
+KutDispatchedFn kutfunc_dispatch(KutValue* self, KutString* message);
+KutDispatchedFn kuttable_dispatch(KutValue* self, KutString* message);
 
 extern KutTable* const empty_table;
 
@@ -57,9 +57,9 @@ static inline KutValue kutnumber_wrap(double number) { return kut_wrap((KutData)
 static inline double kutnumber_cast(KutValue val) { return istype(val, kutnumber) ? val.data.number : 0; }
 static inline bool kutboolean_cast(KutValue val) { return istype(val, kutboolean) ? val.data.boolean : 0; }
 
-void kut_addref(KutValue self);
+void kut_addref(KutValue* self);
 void kut_decref(KutValue* self);
-void kut_print(KutValue self);
+KutString* kut_tostring(KutValue* self);
 
 #define eval(x) x
 

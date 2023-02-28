@@ -1,4 +1,5 @@
 #include "kuttable.h"
+#include "kutstring.h"
 
 #include <stdio.h>
 #include <iso646.h>
@@ -23,6 +24,15 @@ KutValue kuttable_wrap(KutTable* self) {
     return kut_wrap((KutData){.data = self}, kuttable_dispatch);
 }
 
+KutTable* kuttable_directPointer(size_t length, KutValue* data) {
+    KutTable* tabl = calloc(1, sizeof(*tabl));
+    tabl->capacity = length;
+    tabl->len = length;
+    tabl->data = data;
+    tabl->reference_count = 0;
+    return tabl;
+}
+
 KutTable* kuttable_cast(KutValue val) {
     if(istype(val, kuttable)) {
         return val.data.data;
@@ -30,23 +40,32 @@ KutTable* kuttable_cast(KutValue val) {
     return NULL;
 }
 
-KutValue kuttable_addref(KutData self, KutTable* args) {
-    KutTable* _self = self.data;
-    if(_self->reference_count != 0)
-        _self->reference_count += 1;
+KutValue kuttable_addref(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
+    if(self->reference_count != 0)
+        self->reference_count += 1;
     return kutboolean_wrap(true);
 }
 
-KutValue kuttable_decref(KutData self, KutTable* args) {
-    KutTable* _self = self.data;
-    if(_self->reference_count == 0)
+KutValue kuttable_decref(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
+    for(size_t i = 0; i < self->len; i++) {
+        kut_decref(&self->data[i]);
+    }
+    if(self->reference_count == 0)
         return kutboolean_wrap(true);
-    if(_self->reference_count == 1) {
-        free(_self->data);
-        free(_self);
+    if(self->reference_count == 1) {
+        free(self->data);
+        free(self);
         return kutboolean_wrap(false);
     }
-    _self->reference_count -= 1;
+    self->reference_count -= 1;
     return kutboolean_wrap(true);
 }
 
@@ -66,22 +85,22 @@ void __kuttable_append(KutTable* self, KutValue val) {
     if(self->len == self->capacity)
         kuttable_reallocate(self);
     self->data[self->len] = val;
+    kut_addref(&self->data[self->len]);
     self->len += 1;
-    kut_addref(val);
 }
 
-KutValue kuttable_append(KutData self, KutTable* args) {
-    KutTable* _self = self.data;
-    if(args->len < 1) {
+KutValue kuttable_append(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(_self == NULL or args->len < 1) {
         return kut_undefined;
     }
-    __kuttable_append(_self, args->data[0]);
-    return kuttable_wrap(_self);
+    __kuttable_append(self, args->data[0]);
+    return kuttable_wrap(self);
 }
 
-KutValue kuttable_insert(KutData _self, KutTable* args) {
-    KutTable* self = _self.data;
-    if(not (checkarg(args, 0, kutnumber) or args->len < 2)) {
+KutValue kuttable_insert(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(self == NULL or not (checkarg(args, 0, kutnumber) or args->len < 2)) {
         return kut_undefined;
     }
     size_t index = args->data[0].data.number;
@@ -100,7 +119,7 @@ KutValue kuttable_insert(KutData _self, KutTable* args) {
         self->data[i] = self->data[i-1];
 
     self->data[index] = val;
-    kut_addref(val);
+    kut_addref(&self->data[index]);
     return kut_undefined;
 }
 
@@ -115,17 +134,20 @@ KutValue __kuttable_delete(KutTable* self, intmax_t index) {
     return ret;
 }
 
-KutValue kuttable_delete(KutData _self, KutTable* args) {
-    KutTable* self = _self.data;
-    if(not checkarg(args, 0, kutnumber)) {
+KutValue kuttable_delete(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(self == NULL or not checkarg(args, 0, kutnumber)) {
         return kut_undefined;
     }
     intmax_t index = args->data[0].data.number;
     return __kuttable_delete(self, index);
 }
 
-KutValue kuttable_clear(KutData _self, KutTable* args) {
-    KutTable* self = _self.data;
+KutValue kuttable_clear(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
     for(size_t i = 0; i < self->len; i++) {
         kut_decref(&self->data[i]);
         self->data[i] = kut_undefined;
@@ -134,10 +156,43 @@ KutValue kuttable_clear(KutData _self, KutTable* args) {
     return kut_undefined;
 }
 
+KutValue kuttable_tostring(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
+    KutTable* strings = kuttable_new(self->len);
+    strings->len = self->len;
+    size_t total_length = sizeof("[]")-1;
+    for(size_t i = 0; i < self->len; i++) {
+        KutString* str = kut_tostring(&self->data[i]);
+        if(str == NULL) {
+            KutValue strings_table = kuttable_wrap(strings);
+            kut_decref(&strings_table);
+            return kut_undefined;
+        }
+        strings->data[i] = kutstring_wrap(str);
+        total_length += str->len + ((i != self->len-1) ? sizeof(" ")-1 : sizeof("")-1);
+    }
+    size_t offset = 1; // Start at [
+    KutString* ret = kutstring_zero(total_length);
+    ret->data[0] = '[';
+    for(size_t i = 0; i < self->len; i++) {
+        KutString* added = kutstring_cast(strings->data[i]);
+        // No check since we checked in the previous loop
+
+        offset += snprintf(ret->data+offset, ret->len-offset+1, "%.*s%s", kutstring_format(added), (i != self->len-1) ? " " : "");
+    }
+    ret->data[ret->len-1] = ']';
+    KutValue strings_table = kuttable_wrap(strings);
+    kut_decref(&strings_table);
+    return kutstring_wrap(ret);
+}
+
 #include "kuttable.methods"
 #include "kutstring.h"
 
-KutDispatchedFn kuttable_dispatch(KutData self, KutString* message) {
+KutDispatchedFn kuttable_dispatch(KutValue* self, KutString* message) {
     const struct KutDispatchGperfPair* entry = kuttable_dispatchLookup(message->data, message->len);
     if(not entry)
         return empty_dispatched;

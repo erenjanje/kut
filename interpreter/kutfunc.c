@@ -2,18 +2,12 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "kutvm.h"
 #include "kuttable.h"
 #include "kutreference.h"
-
-static KutValue move_register(KutFunc* self, uint8_t reg) {
-    KutValue* ret = calloc(1, sizeof(*ret));
-    *ret = self->registers[reg];
-    self->registers[reg] = kutreference_wrap(ret);
-    ((KutValue*)self->registers[reg].data.data)->reference_count = 2;
-    return kutreference_wrap(ret);
-}
+#include "kutstring.h"
 
 KutFunc* kutfunc_new(KutFunc* context, const KutFuncTemplate* template) {
     KutFunc* ret = calloc(1, sizeof(*ret) + template->register_count*sizeof(ret->registers[0]));
@@ -39,7 +33,7 @@ KutFunc* kutfunc_new(KutFunc* context, const KutFuncTemplate* template) {
             ret->captures[i] = kutreference_wrap(kutreference_new(&context->registers[capture_info]));
         } else { // Capture reference
             capture_info -= 256;
-            kut_addref(context->captures[capture_info]);
+            kut_addref(&context->captures[capture_info]);
             ret->captures[i] = context->captures[capture_info];
         }
     }
@@ -58,15 +52,21 @@ KutValue kutfunc_wrap(KutFunc* self) {
     return kut_wrap((KutData){.data = self}, kutfunc_dispatch);
 }
 
-KutValue kutfunc_addref(KutData _self, KutTable* args) {
-    KutFunc* self = _self.data;
+KutValue kutfunc_addref(KutValue* _self, KutTable* args) {
+    KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
     if(self->reference_count != 0)
         self->reference_count += 1;
     return kutboolean_wrap(true);
 }
 
-KutValue kutfunc_decref(KutData _self, KutTable* args) {
-    KutFunc* self = _self.data;
+KutValue kutfunc_decref(KutValue* _self, KutTable* args) {
+    KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
     if(self->reference_count == 0)
         return kutboolean_wrap(true);
     if(self->reference_count == 1) {
@@ -86,10 +86,17 @@ KutValue kutfunc_decref(KutData _self, KutTable* args) {
     return kutboolean_wrap(true);
 }
 
-KutValue kutfunc_run(KutData _self, KutTable* args) {
-    KutFunc* self = _self.data;
+KutValue kutfunc_run(KutValue* _self, KutTable* args) {
+    KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
     bool finished = false;
     for(size_t i = 0; not finished; i++) {
+        printf("Instruction %zu:\n", i);
+        KutString* debg = kutstring_cast(kutfunc_debug(_self, args));
+        printf("%.*s\n\n", kutstring_format(debg));
+        free(debg);
         KutInstruction instruction = self->instructions[i];
         finished = instruction_handlers[instruction.r.instruction](self, instruction);
     }
@@ -136,86 +143,125 @@ const char* kutfunc_serializeInstruction(KutInstruction instruction) {
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
-void __kutfunc_print(KutFunc* func) {
-    KutInstruction current_instruction = func->instructions[0];
-    const KutInstruction finishing_instruction = kutfunc_emptyInstruction(KI_NOPERATION);
-    size_t i = 0;
-    do {
-        current_instruction = func->instructions[i];
-        i += 1;
-        printf("%s", kutfunc_serializeInstruction(current_instruction));
+static KutString* tostring_name = kutstring_literal("metin-yap");
+
+KutValue kutfunc_debug(KutValue* _self, KutTable* args) {
+    KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
+    KutValue registers = kuttable_wrap(kuttable_directPointer(self->register_count, self->registers));
+    KutString* register_string = kut_tostring(&registers);
+    if(register_string == NULL) {
+        return kut_undefined;
+    }
+    size_t total_length = snprintf(NULL, 0, "func@%p\n\n", self) + register_string->len;
+    for(size_t i = 0; self->instructions[i].r.instruction != KI_NOPERATION; i++) {
+        KutInstruction current_instruction = self->instructions[i];
+        total_length += snprintf(NULL, 0, "   %s", kutfunc_serializeInstruction(current_instruction));
         switch(current_instruction.l.instruction) {
             case KI_NOPERATION:
-                printf("\n");
+                total_length += snprintf(NULL, 0, "\n");
                 break;
             
             case KI_METHODCALL:
-                printf("retn: %5u,\tself: %5u,\tmssg: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
+                total_length += snprintf(NULL, 0, "retn: %5u\tself: %5u\tmssg: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
                 break;
             case KI_RETURNCALL:
-                printf("retn: %5u\n", current_instruction.r.reg0);
+                total_length += snprintf(NULL, 0, "retn: %5u\n", current_instruction.r.reg0);
                 break;
             case KI_PUSHVALUE1:
-                printf("val0: %5u\n", current_instruction.r.reg0);
+                total_length += snprintf(NULL, 0, "val0: %5u\n", current_instruction.r.reg0);
                 break;
             case KI_PUSHVALUE2:
-                printf("val1: %5u,\tval2: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
+                total_length += snprintf(NULL, 0, "val1: %5u\tval2: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
                 break;
             case KI_PUSHVALUE3:
-                printf("val1: %5u,\tval2: %5u,\tval3: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
+                total_length += snprintf(NULL, 0, "val1: %5u\tval2: %5u\tval3: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
                 break;
             case KI_MVREGISTER:
-                printf("dest: %5u,\tsorc: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
+                total_length += snprintf(NULL, 0, "dest: %5u\tsorc: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
                 break;
             case KI_SWAPREGIST:
-                printf("reg1: %5u,\treg2: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
+                total_length += snprintf(NULL, 0, "reg1: %5u\treg2: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
                 break;
             
             case KI_GETLITERAL:
             case KI_GETCLOSURE:
             case KI_SETCLOSURE:
             case KI_GETTMPLATE:
-                printf("regs: %5u,\tlitr: %5u\n", current_instruction.l.reg, current_instruction.l.literal);
+                total_length += snprintf(NULL, 0, "regs: %5u\tlitr: %5u\n", current_instruction.l.reg, current_instruction.l.literal);
                 break;
         }
-    } while(memcmp(&current_instruction, &finishing_instruction, sizeof(KutInstruction)));
-}
+    }
 
-#include "kutstring.h"
-
-KutValue kutfunc_print(KutData _self, KutTable* args) {
-    KutFunc* self = _self.data;
-    printf("REGS: ");
-    for(size_t i = 0; i < self->register_count; i++) {
-        KutValue reg = self->registers[i];
-        if(istype(reg, kutnumber)) {
-            printf("%g ", reg.data.number);
-        } else if(istype(reg, kutstring)) {
-            printf("\"%.*s\" ", kutstring_format(((KutString*)reg.data.data)));
-        } else if(istype(reg, kutundefined)) {
-            printf("undefined ");
-        } else if(istype(reg, kutboolean)) {
-            printf("%s ", reg.data.boolean ? "true" : "false");
-        } else if(reg.dispatch == NULL) {
-            printf("nil ");
-        } else if(istype(reg, kutfunc)) {
-            printf("func-%p ", reg.data.data);
-        } else if(istype(reg, kutreference)) {
-            printf("ref-%p ", reg.data.data);
-        } else {
-            printf("other ");
+    KutString* ret = kutstring_zero(total_length);
+    size_t offset = 0;
+    memcpy(ret->data+offset, register_string->data, register_string->len);
+    offset += register_string->len;
+    ret->data[offset] = '\n';
+    offset += 1;
+    for(size_t i = 0; self->instructions[i].r.instruction != KI_NOPERATION; i++) {
+        KutInstruction current_instruction = self->instructions[i];
+        offset += snprintf(ret->data+offset, ret->len-offset+1, "   %s", kutfunc_serializeInstruction(current_instruction));
+        switch(current_instruction.l.instruction) {
+            case KI_NOPERATION:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "\n");
+                break;
+            
+            case KI_METHODCALL:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "retn: %5u\tself: %5u\tmssg: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
+                break;
+            case KI_RETURNCALL:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "retn: %5u\n", current_instruction.r.reg0);
+                break;
+            case KI_PUSHVALUE1:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "val0: %5u\n", current_instruction.r.reg0);
+                break;
+            case KI_PUSHVALUE2:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "val1: %5u\tval2: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
+                break;
+            case KI_PUSHVALUE3:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "val1: %5u\tval2: %5u\tval3: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
+                break;
+            case KI_MVREGISTER:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "dest: %5u\tsorc: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
+                break;
+            case KI_SWAPREGIST:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "reg1: %5u\treg2: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
+                break;
+            
+            case KI_GETLITERAL:
+            case KI_GETCLOSURE:
+            case KI_SETCLOSURE:
+            case KI_GETTMPLATE:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "regs: %5u\tlitr: %5u\n", current_instruction.l.reg, current_instruction.l.literal);
+                break;
         }
     }
-    printf("\n");
-    __kutfunc_print(self);
-    return kut_undefined;
+    KutValue regstr = kutstring_wrap(register_string);
+    kut_decref(&regstr);
+    free(kuttable_cast(registers));
+    return kutstring_wrap(ret);
+}
+
+KutValue kutfunc_tostring(KutValue* _self, KutTable* args) {
+    KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
+    size_t len = snprintf(NULL, 0, "func/%"PRIXPTR, self);
+    KutString* ret = kutstring_zero(len);
+    snprintf(ret->data, ret->len+1, "func/%"PRIXPTR, self);
+    return kutstring_wrap(ret);
 }
 
 #include "kutfunc.methods"
 #include "kutstring.h"
 
-KutDispatchedFn kutfunc_dispatch(KutData self, KutString* message) {
+KutDispatchedFn kutfunc_dispatch(KutValue* self, KutString* message) {
     const struct KutDispatchGperfPair* entry = kutfunc_dispatchLookup(message->data, message->len);
     if(not entry)
         return empty_dispatched;

@@ -6,12 +6,12 @@
 struct KutDispatchGperfPair;
 #include <string.h>
 
-#define TOTAL_KEYWORDS 2
-#define MIN_WORD_LENGTH 13
+#define TOTAL_KEYWORDS 3
+#define MIN_WORD_LENGTH 9
 #define MAX_WORD_LENGTH 16
-#define MIN_HASH_VALUE 13
+#define MIN_HASH_VALUE 9
 #define MAX_HASH_VALUE 16
-/* maximum key range = 4, duplicates = 0 */
+/* maximum key range = 8, duplicates = 0 */
 
 #ifdef __GNUC__
 __inline
@@ -32,7 +32,7 @@ kutfunc_dispatchLookup (register const char *str, register size_t len)
 {
   static const unsigned char lengthtable[] =
     {
-       0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 13,
+       0,  0,  0,  0,  0,  0,  0,  0,  0,  9,  0,  0,  0, 13,
        0,  0, 16
     };
   static const struct KutDispatchGperfPair wordlist[] =
@@ -41,7 +41,9 @@ kutfunc_dispatchLookup (register const char *str, register size_t len)
       {"",empty_dispatched}, {"",empty_dispatched},
       {"",empty_dispatched}, {"",empty_dispatched},
       {"",empty_dispatched}, {"",empty_dispatched},
-      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched},
+#line 13 "interpreter/kutfunc.gperf"
+      {"metin-yap", kutfunc_tostring},
       {"",empty_dispatched}, {"",empty_dispatched},
       {"",empty_dispatched},
 #line 11 "interpreter/kutfunc.gperf"

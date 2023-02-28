@@ -24,3 +24,4 @@ acot, kutnum_acot
 mutlak-değer, kutnum_abs
 referans-ekle, kutnum_addref
 referans-çıkar, kutnum_decref
+metin-yap, kutnum_tostring

@@ -1,6 +1,7 @@
 #include "kutvm.h"
 #include "kuttable.h"
 #include "kutreference.h"
+#include "kutstring.h"
 #include <stdio.h>
 
 bool kutvm_noperation(KutFunc* func, KutInstruction instruction) {
@@ -9,23 +10,24 @@ bool kutvm_noperation(KutFunc* func, KutInstruction instruction) {
 
 bool kutvm_methodcall(KutFunc* func, KutInstruction instruction) {
     size_t return_position = instruction.r.reg0;
-    KutValue self = func->registers[instruction.r.reg1];
-    KutValue msg = func->registers[instruction.r.reg2];
-    if(not istype(msg, kutstring)) {
+    size_t self = instruction.r.reg1;
+    size_t msg = instruction.r.reg2;
+    KutString* message = kutstring_cast(func->registers[msg]);
+    if(message == NULL) {
         fprintf(stderr, "Message should be a string!\n");
         return false;
     }
-    KutString* message = msg.data.data;
-    KutValue ret = self.dispatch(self.data, message)(self.data, func->call_stack);
+    KutValue ret = func->registers[self].dispatch(&func->registers[self], message)(&func->registers[self], func->call_stack);
     kut_decref(&func->registers[return_position]);
     func->registers[return_position] = ret;
-    kuttable_clear((KutData){.data = func->call_stack}, NULL);
+    KutValue call_stack = kuttable_wrap(func->call_stack);
+    kuttable_clear(&call_stack, empty_table);
     return false;
 }
 
 bool kutvm_returncall(KutFunc* func, KutInstruction instruction) {
     kut_decref(&func->ret);
-    kut_addref(func->registers[instruction.r.reg0]);
+    kut_addref(&func->registers[instruction.r.reg0]);
     func->ret = func->registers[instruction.r.reg0];
     return true;
 }
@@ -50,14 +52,14 @@ bool kutvm_pushvalue3(KutFunc* func, KutInstruction instruction) {
 
 bool kutvm_getliteral(KutFunc* func, KutInstruction instruction) {
     kut_decref(&func->registers[instruction.l.reg]);
-    kut_addref(func->literals[instruction.l.literal]);
+    kut_addref(&func->literals[instruction.l.literal]);
     func->registers[instruction.l.reg] = func->literals[instruction.l.literal];
     return false;
 }
 
 bool kutvm_getclosure(KutFunc* func, KutInstruction instruction) {
     kut_decref(&func->registers[instruction.l.reg]);
-    kut_addref(func->captures[instruction.l.literal]);
+    kut_addref(&func->captures[instruction.l.literal]);
     func->registers[instruction.l.reg] = func->captures[instruction.l.literal];
     return false;
 }
@@ -72,7 +74,7 @@ bool kutvm_mvregister(KutFunc* func, KutInstruction instruction) {
     if(instruction.r.reg0 == instruction.r.reg1)
         return false;
     kut_decref(&func->registers[instruction.r.reg0]);
-    kut_addref(func->registers[instruction.r.reg1]);
+    kut_addref(&func->registers[instruction.r.reg1]);
     func->registers[instruction.r.reg0] = func->registers[instruction.r.reg1];
     return false;
 }

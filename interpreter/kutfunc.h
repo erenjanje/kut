@@ -8,7 +8,7 @@ typedef struct KutFunc KutFunc;
 
 struct KutFuncTemplate {
     const KutInstruction* instructions;
-    const KutValue* literals;
+    KutValue* literals;
     const KutFuncTemplate** function_templates;
     size_t register_count;
     size_t capture_count;
@@ -18,7 +18,7 @@ struct KutFuncTemplate {
 struct KutFunc {
     size_t reference_count;
     const KutInstruction* instructions;
-    const KutValue* literals;
+    KutValue* literals;
     const KutFuncTemplate** function_templates;
     KutValue ret;
     KutTable* call_stack;
@@ -90,12 +90,13 @@ KutFunc* kutfunc_new(KutFunc* context, const KutFuncTemplate* template);
 KutValue kutfunc_wrap(KutFunc* self);
 KutFunc* kutfunc_cast(KutValue val);
 
-KutValue kutfunc_run(KutData self, KutTable* args);
-KutValue kutfunc_print(KutData self, KutTable* args);
+KutValue kutfunc_run(KutValue* self, KutTable* args);
+KutValue kutfunc_debug(KutValue* _self, KutTable* args);
 
 KutInstruction kutfunc_emptyInstruction(KutEmptyInstructionName name);
 KutInstruction kutfunc_registerInstruction(KutRegisterInstructionName name, uint8_t reg0, uint8_t reg1, uint8_t reg2);
 KutInstruction kutfunc_literalInstruction(KutLiteralInstructionName name, uint8_t reg, uint16_t literal);
+
 
 const char* kutfunc_serializeInstruction(KutInstruction instruction);
 

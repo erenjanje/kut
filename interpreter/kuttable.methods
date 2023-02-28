@@ -6,7 +6,7 @@
 struct KutDispatchGperfPair;
 #include <string.h>
 
-#define TOTAL_KEYWORDS 5
+#define TOTAL_KEYWORDS 6
 #define MIN_WORD_LENGTH 3
 #define MAX_WORD_LENGTH 16
 #define MIN_HASH_VALUE 3
@@ -32,7 +32,7 @@ kuttable_dispatchLookup (register const char *str, register size_t len)
 {
   static const unsigned char lengthtable[] =
     {
-       0,  0,  0,  3,  4,  0,  0,  0,  0,  0,  0, 11,  0, 13,
+       0,  0,  0,  3,  4,  0,  0,  0,  0,  9,  0, 11,  0, 13,
        0,  0, 16
     };
   static const struct KutDispatchGperfPair wordlist[] =
@@ -45,7 +45,9 @@ kuttable_dispatchLookup (register const char *str, register size_t len)
       {"ekle", kuttable_insert},
       {"",empty_dispatched}, {"",empty_dispatched},
       {"",empty_dispatched}, {"",empty_dispatched},
-      {"",empty_dispatched}, {"",empty_dispatched},
+#line 16 "interpreter/kuttable.gperf"
+      {"metin-yap", kuttable_tostring},
+      {"",empty_dispatched},
 #line 12 "interpreter/kuttable.gperf"
       {"sonuna-ekle", kuttable_append},
       {"",empty_dispatched},

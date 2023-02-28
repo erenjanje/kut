@@ -33,7 +33,7 @@
 struct KutDispatchGperfPair;
 #include <string.h>
 
-#define TOTAL_KEYWORDS 16
+#define TOTAL_KEYWORDS 17
 #define MIN_WORD_LENGTH 1
 #define MAX_WORD_LENGTH 16
 #define MIN_HASH_VALUE 1
@@ -63,7 +63,7 @@ kutnum_dispatchHash (register const char *str, register size_t len)
       29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
       29, 29, 29, 29, 29, 29, 29, 25, 29, 10,
       29,  0, 29, 29, 29, 20, 29, 29, 29, 29,
-       0,  0, 29, 29,  0,  5,  0,  5, 29, 29,
+       0,  0, 15, 29,  0,  5,  0,  5, 29, 29,
       29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
       29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
       29, 29, 29, 29, 29, 29, 29, 29, 29, 29,
@@ -98,7 +98,7 @@ kutnum_dispatchLookup (register const char *str, register size_t len)
   static const unsigned char lengthtable[] =
     {
        0,  1,  0,  3,  4,  5,  1,  0,  3,  4,  0,  1,  0, 13,
-       4,  0, 16,  0, 13,  4,  0,  1,  0,  3,  0,  0,  0,  0,
+       4,  0, 16,  0, 13,  4,  0,  1,  0,  3,  9,  0,  0,  0,
        3
     };
   static const struct KutDispatchGperfPair wordlist[] =
@@ -142,8 +142,10 @@ kutnum_dispatchLookup (register const char *str, register size_t len)
       {"",empty_dispatched},
 #line 15 "interpreter/kutnum.gperf"
       {"sin", kutnum_sin},
+#line 27 "interpreter/kutnum.gperf"
+      {"metin-yap", kutnum_tostring},
       {"",empty_dispatched}, {"",empty_dispatched},
-      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched},
 #line 17 "interpreter/kutnum.gperf"
       {"tan", kutnum_tan}
     };

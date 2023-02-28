@@ -10,7 +10,7 @@
 
 
 int main() {    
-    const KutValue literals[] = {
+    KutValue literals[] = {
         kutnumber_wrap(25),
         kutnumber_wrap(16),
         kutstring_wrap(kutstring_literal("atan2")),
@@ -23,14 +23,14 @@ int main() {
         kutfunc_returncall(0),
         kutfunc_noperation(),
     };
-    const KutFuncTemplate* inner_template = kutfunc_templateLiteral(inner_instructions, literals, 2, 1);
+    const KutFuncTemplate* inner_template = kutfunc_templateLiteral(inner_instructions, literals, 2, 2);
     
     const KutFuncTemplate* templates[] = {
         inner_template,
     };
 
     const KutInstruction instructions[] = {
-        kutfunc_getliteral(1, 0),
+        kutfunc_getliteral(1, 2),
         kutfunc_gettmplate(0, 0),
         kutfunc_returncall(1),
         kutfunc_noperation(),
@@ -44,9 +44,11 @@ int main() {
     };
 
     KutValue func = kutfunc_wrap(kutfunc_new(NULL, &template));
-    KutValue ret = kutfunc_run(func.data, NULL);
-    kutfunc_print(func.data, NULL);
-    printf("ret: %p\n", kutreference_cast(ret));
+    KutValue ret = kutfunc_run(&func, empty_table);
+    KutString* str = kut_tostring(&func);
+    // printf("%.*s\n", kutstring_format(str));
     kut_decref(&func);
     kut_decref(&ret);
+    free(str);
+    return 0;
 }

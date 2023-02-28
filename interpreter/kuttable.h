@@ -16,15 +16,16 @@ struct KutTable {
 
 KutTable* kuttable_new(size_t initial_capacity);
 KutValue kuttable_wrap(KutTable* self);
+KutTable* kuttable_directPointer(size_t length, KutValue* data);
 KutTable* kuttable_cast(KutValue val);
 
 void __kuttable_append(KutTable* self, KutValue val);
 KutValue __kuttable_delete(KutTable* self, intmax_t index);
 
-KutValue kuttable_append(KutData self, KutTable* index);
-KutValue kuttable_insert(KutData self, KutTable* index);
-KutValue kuttable_delete(KutData self, KutTable* index);
-KutValue kuttable_clear(KutData self, KutTable* args);
+KutValue kuttable_append(KutValue* self, KutTable* index);
+KutValue kuttable_insert(KutValue* self, KutTable* index);
+KutValue kuttable_delete(KutValue* self, KutTable* index);
+KutValue kuttable_clear(KutValue* self, KutTable* args);
 
 #define kuttable_literal(first, ...) (KutTable*)(KutTable[]){{\
     .reference_count = 0,\
