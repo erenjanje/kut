@@ -2,6 +2,7 @@
 #include "kutstring.h"
 #include "kuttable.h"
 #include "kutfunc.h"
+#include "kutreference.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -42,11 +43,10 @@ int main() {
         .function_templates = templates,
     };
 
-
     KutValue func = kutfunc_wrap(kutfunc_new(NULL, &template));
     KutValue ret = kutfunc_run(func.data, NULL);
     kutfunc_print(func.data, NULL);
-    // printf("ret: %g\n", ret.data.number);
+    printf("ret: %p\n", kutreference_cast(ret));
     kut_decref(&func);
     kut_decref(&ret);
 }

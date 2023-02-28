@@ -5,6 +5,7 @@
 
 #include "kutvm.h"
 #include "kuttable.h"
+#include "kutreference.h"
 
 static KutValue move_register(KutFunc* self, uint8_t reg) {
     KutValue* ret = calloc(1, sizeof(*ret));
@@ -35,7 +36,7 @@ KutFunc* kutfunc_new(KutFunc* context, const KutFuncTemplate* template) {
     for(size_t i = 0; i < template->capture_count; i++) {
         uint16_t capture_info = template->capture_infos[i];
         if(capture_info < 256) { // Register reference
-            ret->captures[i] = move_register(context, capture_info);
+            ret->captures[i] = kutreference_wrap(kutreference_new(&context->registers[capture_info]));
         } else { // Capture reference
             capture_info -= 256;
             kut_addref(context->captures[capture_info]);
@@ -44,6 +45,13 @@ KutFunc* kutfunc_new(KutFunc* context, const KutFuncTemplate* template) {
     }
     
     return ret;
+}
+
+KutFunc* kutfunc_cast(KutValue val) {
+    if(istype(val, kutfunc)) {
+        return val.data.data;
+    }
+    return NULL;
 }
 
 KutValue kutfunc_wrap(KutFunc* self) {
@@ -194,7 +202,7 @@ KutValue kutfunc_print(KutData _self, KutTable* args) {
         } else if(istype(reg, kutfunc)) {
             printf("func-%p ", reg.data.data);
         } else if(istype(reg, kutreference)) {
-            printf("ref-%p", reg.data.data);
+            printf("ref-%p ", reg.data.data);
         } else {
             printf("other ");
         }

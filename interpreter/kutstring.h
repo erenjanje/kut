@@ -13,6 +13,7 @@ struct KutString {
 KutString* kutstring_new(char* str, size_t len);
 KutString* kutstring_newCString(char* str);
 KutValue kutstring_wrap(KutString* str);
+KutString* kutstring_cast(KutValue val);
 
 /// Hideous, isn't it? Well, It creates a new anonymous struct with fixed
 /// length `data` field and puts the literal's data into it and then makes `name` a `KutString*` pointing to it.

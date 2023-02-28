@@ -21,6 +21,13 @@ KutString* kutstring_newCString(char* str) {
     return kutstring_new(str, strlen(str)-1);
 }
 
+KutString* kutstring_cast(KutValue val) {
+    if(istype(val, kutstring)) {
+        return val.data.data;
+    }
+    return NULL;
+}
+
 KutValue kutstring_addref(KutData self, KutTable* args) {
     KutString* str = self.data;
     if(str->reference_count != 0)

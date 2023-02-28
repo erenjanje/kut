@@ -16,6 +16,7 @@ struct KutTable {
 
 KutTable* kuttable_new(size_t initial_capacity);
 KutValue kuttable_wrap(KutTable* self);
+KutTable* kuttable_cast(KutValue val);
 
 void __kuttable_append(KutTable* self, KutValue val);
 KutValue __kuttable_delete(KutTable* self, intmax_t index);

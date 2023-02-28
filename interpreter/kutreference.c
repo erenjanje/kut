@@ -1,6 +1,25 @@
 #include "kutreference.h"
 #include <stdlib.h>
 
+KutValue* kutreference_new(KutValue* ref) {
+    KutValue* ret = calloc(1, sizeof(*ret));
+    *ret = *ref;
+    *ref = kutreference_wrap(ret);
+    ret->reference_count = 2;
+    return ret;
+}
+
+KutValue kutreference_wrap(KutValue* ref) {
+    return kut_wrap((KutData){.data = ref}, kutreference_dispatch);
+}
+
+KutValue* kutreference_cast(KutValue val) {
+    if(istype(val, kutreference)) {
+        return val.data.data;
+    }
+    return NULL;
+}
+
 KutValue kutreference_get(KutValue _self) {
     kutreference_decref(_self.data, NULL);
     KutValue* self = _self.data.data;
@@ -13,7 +32,6 @@ KutValue kutreference_set(KutValue _self, KutValue val) {
     *self = val;
     return val;
 }
-
 
 KutValue kutreference_addref(KutData self, KutTable* args) {
     KutValue* _self = self.data;

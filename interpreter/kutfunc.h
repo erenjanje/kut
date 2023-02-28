@@ -88,6 +88,7 @@ union KutInstruction {
 
 KutFunc* kutfunc_new(KutFunc* context, const KutFuncTemplate* template);
 KutValue kutfunc_wrap(KutFunc* self);
+KutFunc* kutfunc_cast(KutValue val);
 
 KutValue kutfunc_run(KutData self, KutTable* args);
 KutValue kutfunc_print(KutData self, KutTable* args);

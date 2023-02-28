@@ -23,6 +23,13 @@ KutValue kuttable_wrap(KutTable* self) {
     return kut_wrap((KutData){.data = self}, kuttable_dispatch);
 }
 
+KutTable* kuttable_cast(KutValue val) {
+    if(istype(val, kuttable)) {
+        return val.data.data;
+    }
+    return NULL;
+}
+
 KutValue kuttable_addref(KutData self, KutTable* args) {
     KutTable* _self = self.data;
     if(_self->reference_count != 0)

@@ -42,6 +42,10 @@ struct KutDispatchGperfPair {
     KutDispatchedFn method;
 };
 
+#define istype(v, T) ((v).dispatch == T##_dispatch)
+bool checkarg(KutTable* args, size_t index, KutDispatchFn type);
+#define checkarg(args, index, type) checkarg(args, index, type##_dispatch)
+
 static const KutValue kut_nil = {.dispatch = NULL};
 static const KutValue kut_undefined = {.dispatch = kutundefined_dispatch};
 
@@ -49,18 +53,16 @@ static inline KutValue kut_wrap(KutData data, KutDispatchFn dispatch) { return (
 
 static inline KutValue kutboolean_wrap(bool boolean) { return kut_wrap((KutData){.boolean = boolean}, kutboolean_dispatch); }
 static inline KutValue kutnumber_wrap(double number) { return kut_wrap((KutData){.number = number}, kutnumber_dispatch); }
-static inline KutValue kutreference_wrap(KutValue* reference) { return kut_wrap((KutData){.data = reference}, kutreference_dispatch); }
+
+static inline double kutnumber_cast(KutValue val) { return istype(val, kutnumber) ? val.data.number : 0; }
+static inline bool kutboolean_cast(KutValue val) { return istype(val, kutboolean) ? val.data.boolean : 0; }
 
 void kut_addref(KutValue self);
 void kut_decref(KutValue* self);
 void kut_print(KutValue self);
 
-#define istype(v, T) ((v).dispatch == T##_dispatch)
 #define eval(x) x
 
-bool checkarg(KutTable* args, size_t index, KutDispatchFn type);
-
-#define checkarg(args, index, type) checkarg(args, index, type##_dispatch)
 
 typedef union KutInstruction KutInstruction;
 
