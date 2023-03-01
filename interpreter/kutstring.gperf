@@ -11,6 +11,3 @@ struct KutDispatchGperfPair
 =, kutstring_equal
 eşit, kutstring_equal
 kıyasla, kutstring_compare
-referans-ekle, kutstring_addref
-referans-çıkar, kutstring_decref
-metin-yap, kutstring_tostring

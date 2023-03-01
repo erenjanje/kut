@@ -11,6 +11,3 @@ struct KutDispatchGperfPair
 ekle, kuttable_insert
 sonuna-ekle, kuttable_append
 sil, kuttable_delete
-referans-ekle, kuttable_addref
-referans-çıkar, kuttable_decref
-metin-yap, kuttable_tostring

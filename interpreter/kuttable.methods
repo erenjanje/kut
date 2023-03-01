@@ -6,12 +6,12 @@
 struct KutDispatchGperfPair;
 #include <string.h>
 
-#define TOTAL_KEYWORDS 6
+#define TOTAL_KEYWORDS 3
 #define MIN_WORD_LENGTH 3
-#define MAX_WORD_LENGTH 16
+#define MAX_WORD_LENGTH 11
 #define MIN_HASH_VALUE 3
-#define MAX_HASH_VALUE 16
-/* maximum key range = 14, duplicates = 0 */
+#define MAX_HASH_VALUE 11
+/* maximum key range = 9, duplicates = 0 */
 
 #ifdef __GNUC__
 __inline
@@ -32,8 +32,7 @@ kuttable_dispatchLookup (register const char *str, register size_t len)
 {
   static const unsigned char lengthtable[] =
     {
-       0,  0,  0,  3,  4,  0,  0,  0,  0,  9,  0, 11,  0, 13,
-       0,  0, 16
+       0,  0,  0,  3,  4,  0,  0,  0,  0,  0,  0, 11
     };
   static const struct KutDispatchGperfPair wordlist[] =
     {
@@ -45,17 +44,9 @@ kuttable_dispatchLookup (register const char *str, register size_t len)
       {"ekle", kuttable_insert},
       {"",empty_dispatched}, {"",empty_dispatched},
       {"",empty_dispatched}, {"",empty_dispatched},
-#line 16 "interpreter/kuttable.gperf"
-      {"metin-yap", kuttable_tostring},
-      {"",empty_dispatched},
-#line 12 "interpreter/kuttable.gperf"
-      {"sonuna-ekle", kuttable_append},
-      {"",empty_dispatched},
-#line 14 "interpreter/kuttable.gperf"
-      {"referans-ekle", kuttable_addref},
       {"",empty_dispatched}, {"",empty_dispatched},
-#line 15 "interpreter/kuttable.gperf"
-      {"referans-\303\247\304\261kar", kuttable_decref}
+#line 12 "interpreter/kuttable.gperf"
+      {"sonuna-ekle", kuttable_append}
     };
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)

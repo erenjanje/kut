@@ -15,7 +15,7 @@ KutString* kutstring_new(char* str, size_t len) {
 }
 
 KutValue kutstring_wrap(KutString* str) {
-    return kut_wrap((KutData){.data = str}, kutstring_dispatch);
+    return kut_wrap((KutData){.data = str}, &kutstring_methods);
 }
 
 KutString* kutstring_newCString(char* str) {
@@ -36,29 +36,27 @@ KutString* kutstring_zero(size_t len) {
     return ret;
 }
 
-KutValue kutstring_addref(KutValue* _self, KutTable* args) {
+static void kutstring_addref(KutValue* _self) {
     KutString* self = _self ? kutstring_cast(*_self) : NULL;
     if(self == NULL) {
-        return kut_undefined;
+        return;
     }
     if(self->reference_count != 0)
         self->reference_count += 1;
-    return kutboolean_wrap(true);
 }
 
-KutValue kutstring_decref(KutValue* _self, KutTable* args) {
+static void kutstring_decref(KutValue* _self) {
     KutString* self = _self ? kutstring_cast(*_self) : NULL;
     if(self == NULL) {
-        return kut_undefined;
+        return;
     }
     if(self->reference_count == 0)
-        return kutboolean_wrap(true);
+        return;
     if(self->reference_count == 1) {
         free(self);
-        return kutboolean_wrap(false);
+        return;
     }
     self->reference_count -= 1;
-    return kutboolean_wrap(true);
 }
 
 KutValue kutstring_equal(KutValue* _self, KutTable* args) {
@@ -66,7 +64,7 @@ KutValue kutstring_equal(KutValue* _self, KutTable* args) {
     if(self == NULL) {
         return kut_undefined;
     }
-    if(not checkarg(args, 0, kutstring)) {
+    if(not checkarg(args, 0, &kutstring_methods)) {
         return kut_undefined;
     }
     return kutboolean_wrap(kutstring_equalString(self, (KutString*)args->data[0].data.data));
@@ -85,7 +83,7 @@ KutValue kutstring_compare(KutValue* _self, KutTable* args) {
     if(self == NULL) {
         return kut_undefined;
     }
-    if(not checkarg(args, 0, kutstring)) {
+    if(not checkarg(args, 0, &kutstring_methods)) {
         return kut_undefined;
     }
     return kutnumber_wrap(kutstring_compareString(self, (KutString*)args->data[0].data.data));
@@ -99,15 +97,16 @@ bool kutstring_compareCString(KutString* self, const char* other, size_t length)
     return memcmp(self->data, other, ((self->len < length) ? self->len : length));
 }
 
-KutValue kutstring_tostring(KutValue* _self, KutTable* args) {
+static KutString* kutstring_tostring(KutValue* _self, size_t indent) {
     KutString* self = _self ? kutstring_cast(*_self) : NULL;
     if(self == NULL) {
-        return kut_undefined;
+        return NULL;
     }
     // TODO: Escape the string
-    KutString* ret = kutstring_zero(self->len+sizeof("\"\"")-1);
-    snprintf(ret->data, ret->len+1, "\"%.*s\"", kutstring_format(self));
-    return kutstring_wrap(ret);
+    KutString* ret = kutstring_zero(self->len + sizeof("\"\"")-1 + indent*(sizeof("\t")-1));
+    memset(ret->data, '\t', indent);
+    snprintf(ret->data+indent, ret->len+1, "\"%.*s\"", kutstring_format(self));
+    return ret;
 }
 
 #include "kutstring.methods"
@@ -118,3 +117,10 @@ KutDispatchedFn kutstring_dispatch(KutValue* self, KutString* message) {
         return empty_dispatched;
     return entry->method;
 }
+
+const KutMandatoryMethodsTable kutstring_methods = {
+    .dispatch = kutstring_dispatch,
+    .addref = kutstring_addref,
+    .decref = kutstring_decref,
+    .tostring = kutstring_tostring,
+};

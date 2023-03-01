@@ -49,26 +49,25 @@ KutFunc* kutfunc_cast(KutValue val) {
 }
 
 KutValue kutfunc_wrap(KutFunc* self) {
-    return kut_wrap((KutData){.data = self}, kutfunc_dispatch);
+    return kut_wrap((KutData){.data = self}, &kutfunc_methods);
 }
 
-KutValue kutfunc_addref(KutValue* _self, KutTable* args) {
+void kutfunc_addref(KutValue* _self) {
     KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
     if(self == NULL) {
-        return kut_undefined;
+        return;
     }
     if(self->reference_count != 0)
         self->reference_count += 1;
-    return kutboolean_wrap(true);
 }
 
-KutValue kutfunc_decref(KutValue* _self, KutTable* args) {
+void kutfunc_decref(KutValue* _self) {
     KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
     if(self == NULL) {
-        return kut_undefined;
+        return;
     }
     if(self->reference_count == 0)
-        return kutboolean_wrap(true);
+        return;
     if(self->reference_count == 1) {
         for(size_t i = 0; i < self->reference_count; i++) {
             kut_decref(&self->registers[i]);
@@ -80,10 +79,10 @@ KutValue kutfunc_decref(KutValue* _self, KutTable* args) {
         kut_decref(&call_stack);
         free(self->captures);
         free(self);
-        return kutboolean_wrap(false);
+        return;
     }
     self->reference_count -= 1;
-    return kutboolean_wrap(true);
+    return;
 }
 
 KutValue kutfunc_run(KutValue* _self, KutTable* args) {
@@ -94,7 +93,7 @@ KutValue kutfunc_run(KutValue* _self, KutTable* args) {
     bool finished = false;
     for(size_t i = 0; not finished; i++) {
         printf("Instruction %zu:\n", i);
-        KutString* debg = kutstring_cast(kutfunc_debug(_self, args));
+        KutString* debg = kutstring_cast(kutfunc_debug(_self));
         printf("%.*s\n\n", kutstring_format(debg));
         free(debg);
         KutInstruction instruction = self->instructions[i];
@@ -147,17 +146,19 @@ const char* kutfunc_serializeInstruction(KutInstruction instruction) {
 
 static KutString* tostring_name = kutstring_literal("metin-yap");
 
-KutValue kutfunc_debug(KutValue* _self, KutTable* args) {
+KutValue kutfunc_debug(KutValue* _self) {
     KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
     if(self == NULL) {
         return kut_undefined;
     }
     KutValue registers = kuttable_wrap(kuttable_directPointer(self->register_count, self->registers));
-    KutString* register_string = kut_tostring(&registers);
+    KutValue captures = kuttable_wrap(kuttable_directPointer(self->capture_count, self->captures));
+    KutString* register_string = kut_tostring(&registers, 0);
+    KutString* capture_string = kut_tostring(&captures, 0);
     if(register_string == NULL) {
         return kut_undefined;
     }
-    size_t total_length = snprintf(NULL, 0, "func@%p\n\n", self) + register_string->len;
+    size_t total_length = snprintf(NULL, 0, "func@%p\n\n\n", self) + register_string->len + capture_string->len;
     for(size_t i = 0; self->instructions[i].r.instruction != KI_NOPERATION; i++) {
         KutInstruction current_instruction = self->instructions[i];
         total_length += snprintf(NULL, 0, "   %s", kutfunc_serializeInstruction(current_instruction));
@@ -198,9 +199,13 @@ KutValue kutfunc_debug(KutValue* _self, KutTable* args) {
     }
 
     KutString* ret = kutstring_zero(total_length);
-    size_t offset = 0;
+    size_t offset = snprintf(ret->data, total_length+1, "func@%p\n", self);
     memcpy(ret->data+offset, register_string->data, register_string->len);
     offset += register_string->len;
+    ret->data[offset] = '\n';
+    offset += 1;
+    memcpy(ret->data+offset, capture_string->data, capture_string->len);
+    offset += capture_string->len;
     ret->data[offset] = '\n';
     offset += 1;
     for(size_t i = 0; self->instructions[i].r.instruction != KI_NOPERATION; i++) {
@@ -243,19 +248,23 @@ KutValue kutfunc_debug(KutValue* _self, KutTable* args) {
     }
     KutValue regstr = kutstring_wrap(register_string);
     kut_decref(&regstr);
+    regstr = kutstring_wrap(capture_string);
+    kut_decref(&regstr);
     free(kuttable_cast(registers));
+    free(kuttable_cast(captures));
     return kutstring_wrap(ret);
 }
 
-KutValue kutfunc_tostring(KutValue* _self, KutTable* args) {
+KutString* kutfunc_tostring(KutValue* _self, size_t indent) {
     KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
     if(self == NULL) {
-        return kut_undefined;
+        return NULL;
     }
-    size_t len = snprintf(NULL, 0, "func/%"PRIXPTR, self);
+    size_t len = snprintf(NULL, 0, "func/%"PRIXPTR, self) + indent*(sizeof("\t")-1);
     KutString* ret = kutstring_zero(len);
-    snprintf(ret->data, ret->len+1, "func/%"PRIXPTR, self);
-    return kutstring_wrap(ret);
+    memset(ret->data, '\t', indent);
+    snprintf(ret->data+indent, ret->len+1, "func/%"PRIXPTR, self);
+    return ret;
 }
 
 #include "kutfunc.methods"
@@ -315,3 +324,10 @@ KutInstruction kutfunc_setclosure(uint8_t reg, uint16_t literal) {
 KutInstruction kutfunc_gettmplate(uint8_t reg, uint16_t literal) {
     return (KutInstruction){.l = {.instruction = KI_GETTMPLATE, .reg = reg, .literal = literal}};
 }
+
+const KutMandatoryMethodsTable kutfunc_methods = {
+    .dispatch = kutfunc_dispatch,
+    .addref = kutfunc_addref,
+    .decref = kutfunc_decref,
+    .tostring = kutfunc_tostring,
+};

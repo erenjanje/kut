@@ -91,7 +91,7 @@ KutValue kutfunc_wrap(KutFunc* self);
 KutFunc* kutfunc_cast(KutValue val);
 
 KutValue kutfunc_run(KutValue* self, KutTable* args);
-KutValue kutfunc_debug(KutValue* _self, KutTable* args);
+KutValue kutfunc_debug(KutValue* _self);
 
 KutInstruction kutfunc_emptyInstruction(KutEmptyInstructionName name);
 KutInstruction kutfunc_registerInstruction(KutRegisterInstructionName name, uint8_t reg0, uint8_t reg1, uint8_t reg2);

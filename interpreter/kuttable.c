@@ -21,7 +21,7 @@ KutTable* kuttable_new(size_t initial_capacity) {
 }
 
 KutValue kuttable_wrap(KutTable* self) {
-    return kut_wrap((KutData){.data = self}, kuttable_dispatch);
+    return kut_wrap((KutData){.data = self}, &kuttable_methods);
 }
 
 KutTable* kuttable_directPointer(size_t length, KutValue* data) {
@@ -40,33 +40,31 @@ KutTable* kuttable_cast(KutValue val) {
     return NULL;
 }
 
-KutValue kuttable_addref(KutValue* _self, KutTable* args) {
+void kuttable_addref(KutValue* _self) {
     KutTable* self = _self ? kuttable_cast(*_self) : NULL;
     if(self == NULL) {
-        return kut_undefined;
+        return;
     }
     if(self->reference_count != 0)
         self->reference_count += 1;
-    return kutboolean_wrap(true);
 }
 
-KutValue kuttable_decref(KutValue* _self, KutTable* args) {
+void kuttable_decref(KutValue* _self) {
     KutTable* self = _self ? kuttable_cast(*_self) : NULL;
     if(self == NULL) {
-        return kut_undefined;
+        return;
     }
     for(size_t i = 0; i < self->len; i++) {
         kut_decref(&self->data[i]);
     }
     if(self->reference_count == 0)
-        return kutboolean_wrap(true);
+        return;
     if(self->reference_count == 1) {
         free(self->data);
         free(self);
-        return kutboolean_wrap(false);
+        return;
     }
     self->reference_count -= 1;
-    return kutboolean_wrap(true);
 }
 
 static bool kuttable_reallocate(KutTable* self) {
@@ -100,7 +98,7 @@ KutValue kuttable_append(KutValue* _self, KutTable* args) {
 
 KutValue kuttable_insert(KutValue* _self, KutTable* args) {
     KutTable* self = _self ? kuttable_cast(*_self) : NULL;
-    if(self == NULL or not (checkarg(args, 0, kutnumber) or args->len < 2)) {
+    if(self == NULL or not (checkarg(args, 0, &kutnumber_methods) or args->len < 2)) {
         return kut_undefined;
     }
     size_t index = args->data[0].data.number;
@@ -136,7 +134,7 @@ KutValue __kuttable_delete(KutTable* self, intmax_t index) {
 
 KutValue kuttable_delete(KutValue* _self, KutTable* args) {
     KutTable* self = _self ? kuttable_cast(*_self) : NULL;
-    if(self == NULL or not checkarg(args, 0, kutnumber)) {
+    if(self == NULL or not checkarg(args, 0, &kutnumber_methods)) {
         return kut_undefined;
     }
     intmax_t index = args->data[0].data.number;
@@ -156,27 +154,28 @@ KutValue kuttable_clear(KutValue* _self, KutTable* args) {
     return kut_undefined;
 }
 
-KutValue kuttable_tostring(KutValue* _self, KutTable* args) {
+KutString* kuttable_tostring(KutValue* _self, size_t indent) {
     KutTable* self = _self ? kuttable_cast(*_self) : NULL;
     if(self == NULL) {
-        return kut_undefined;
+        return NULL;
     }
     KutTable* strings = kuttable_new(self->len);
     strings->len = self->len;
-    size_t total_length = sizeof("[]")-1;
+    size_t total_length = sizeof("[]")-1 + indent*(sizeof("\t")-1);
     for(size_t i = 0; i < self->len; i++) {
-        KutString* str = kut_tostring(&self->data[i]);
+        KutString* str = kut_tostring(&self->data[i], 0);
         if(str == NULL) {
             KutValue strings_table = kuttable_wrap(strings);
             kut_decref(&strings_table);
-            return kut_undefined;
+            return NULL;
         }
         strings->data[i] = kutstring_wrap(str);
         total_length += str->len + ((i != self->len-1) ? sizeof(" ")-1 : sizeof("")-1);
     }
-    size_t offset = 1; // Start at [
+    size_t offset = indent+1; // Start at [
     KutString* ret = kutstring_zero(total_length);
-    ret->data[0] = '[';
+    memset(ret->data, '\t', indent);
+    ret->data[indent] = '[';
     for(size_t i = 0; i < self->len; i++) {
         KutString* added = kutstring_cast(strings->data[i]);
         // No check since we checked in the previous loop
@@ -186,7 +185,7 @@ KutValue kuttable_tostring(KutValue* _self, KutTable* args) {
     ret->data[ret->len-1] = ']';
     KutValue strings_table = kuttable_wrap(strings);
     kut_decref(&strings_table);
-    return kutstring_wrap(ret);
+    return ret;
 }
 
 #include "kuttable.methods"
@@ -198,3 +197,10 @@ KutDispatchedFn kuttable_dispatch(KutValue* self, KutString* message) {
         return empty_dispatched;
     return entry->method;
 }
+
+const KutMandatoryMethodsTable kuttable_methods = {
+    .dispatch = kuttable_dispatch,
+    .addref = kuttable_addref,
+    .decref = kuttable_decref,
+    .tostring = kuttable_tostring,
+};

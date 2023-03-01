@@ -92,20 +92,13 @@ static KutValue kutnum_abs(KutValue* data, KutTable* args) {
     return kutnumber_wrap(fabs(num));
 }
 
-static KutValue kutnum_addref(KutValue* data, KutTable* args) {
-    return kutboolean_wrap(true);
-}
-
-static KutValue kutnum_decref(KutValue* data, KutTable* args) {
-    return kutboolean_wrap(true);
-}
-
-static KutValue kutnum_tostring(KutValue* data, KutTable* args) {
+static KutString* kutnum_tostring(KutValue* data, size_t indent) {
     double num = data ? kutnumber_cast(*data) : nan("notvalid");
-    size_t len = snprintf(NULL, 0, "%g", num);
+    size_t len = snprintf(NULL, 0, "%g", num) + indent*(sizeof("\t")-1);
     KutString* ret = kutstring_zero(len);
-    snprintf(ret->data, ret->len+1, "%g", num);
-    return kutstring_wrap(ret);
+    memset(ret->data, '\t', indent);
+    snprintf(ret->data+indent, ret->len+1, "%g", num);
+    return ret;
 }
 
 #include "kutnum.methods"
@@ -118,3 +111,10 @@ KutDispatchedFn kutnumber_dispatch(KutValue* self, KutString* message) {
         return empty_dispatched;
     return entry->method;
 }
+
+const KutMandatoryMethodsTable kutnumber_methods = {
+    .dispatch = kutnumber_dispatch,
+    .addref = NULL,
+    .decref = NULL,
+    .tostring = kutnum_tostring,
+};

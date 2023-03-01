@@ -21,9 +21,6 @@ KutString* kutstring_cast(KutValue val);
 /// Note that the reference count is 0, since this should not be freed at all as it resides in the data/bss segment.
 #define kutstring_literal(lit) (KutString*)(struct {size_t ref, len; char data[sizeof((lit))];}[]){{.ref = 0, .len = sizeof((lit))-1, .data = lit}}
 
-KutValue kutstring_addref(KutValue* self, KutTable* args);
-KutValue kutstring_decref(KutValue* self, KutTable* args);
-
 bool kutstring_equalString(KutString* self, KutString* other);
 bool kutstring_equalCString(KutString* self, const char* other, size_t length);
 
