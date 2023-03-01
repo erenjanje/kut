@@ -8,10 +8,16 @@
 %includes
 struct KutDispatchGperfPair
 %%
+<, kutnum_lt
+<=, kutnum_le
+>, kutnum_gt
+>=, kutnum_ge
+eşit, kutnum_equal
 +, kutnum_add
 -, kutnum_sub
 *, kutnum_mul
 /, kutnum_div
+^, kutnum_pow
 sin, kutnum_sin
 cos, kutnum_cos
 tan, kutnum_tan

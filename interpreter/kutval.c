@@ -52,7 +52,7 @@ void kut_decref(KutValue* self) {
         self->methods->decref(self);
     }
     size_t ref = self->reference_count;
-    *self = kut_undefined;
+    *self = kut_nil;
     self->reference_count = ref;
 }
 

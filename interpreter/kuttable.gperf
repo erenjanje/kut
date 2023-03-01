@@ -13,3 +13,5 @@ sonuna-ekle, kuttable_append
 sil, kuttable_delete
 dön, kuttable_foreach
 eşle, kuttable_map
+ele, kuttable_filter
+sar, kuttable_reduce

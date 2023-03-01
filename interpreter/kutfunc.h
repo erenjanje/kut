@@ -116,10 +116,14 @@ KutInstruction kutfunc_pushvalue2(uint8_t value1, uint8_t value2);
 KutInstruction kutfunc_pushvalue3(uint8_t value1, uint8_t value2, uint8_t value3);
 KutInstruction kutfunc_mvregister(uint8_t destination, uint8_t source);
 KutInstruction kutfunc_swapregist(uint8_t reg1, uint8_t reg2);
+KutInstruction kutfunc_branchwith(uint8_t condition, uint8_t ifthen, uint8_t otherwise);
 KutInstruction kutfunc_getliteral(uint8_t reg, uint16_t literal);
 KutInstruction kutfunc_getclosure(uint8_t reg, uint16_t literal);
 KutInstruction kutfunc_setclosure(uint8_t reg, uint16_t literal);
 KutInstruction kutfunc_gettmplate(uint8_t reg, uint16_t literal);
+KutInstruction kutfunc_load16litr(uint8_t reg, uint16_t literal);
+KutInstruction kutfunc_loadnilval(uint8_t reg);
+KutInstruction kutfunc_loadundefn(uint8_t reg);
 
 #define kutfunc_templateLiteral(_instructions, _literals, _register_count, _infos, ...) \
     (const KutFuncTemplate*)(const struct {const KutInstruction* instructions; const KutValue* literals; const KutFuncTemplate** function_templates; size_t register_count, capture_count; uint16_t captures[sizeof((uint16_t[]){_infos, ##__VA_ARGS__})/sizeof(uint16_t)];}[])\

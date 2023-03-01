@@ -7,6 +7,46 @@
 #include <string.h>
 #include <stdio.h>
 
+static KutValue kutnum_lt(KutValue* data, KutTable* args) {
+    double num = data ? kutnumber_cast(*data) : 0.0;
+    if(args->len < 1 or not istype(args->data[0], kutnumber)) {
+        return kut_undefined;
+    }
+    return kutboolean_wrap(num < kutnumber_cast(args->data[0]));
+}
+
+static KutValue kutnum_gt(KutValue* data, KutTable* args) {
+    double num = data ? kutnumber_cast(*data) : 0.0;
+    if(args->len < 1 or not istype(args->data[0], kutnumber)) {
+        return kut_undefined;
+    }
+    return kutboolean_wrap(num > kutnumber_cast(args->data[0]));
+}
+
+static KutValue kutnum_le(KutValue* data, KutTable* args) {
+    double num = data ? kutnumber_cast(*data) : 0.0;
+    if(args->len < 1 or not istype(args->data[0], kutnumber)) {
+        return kut_undefined;
+    }
+    return kutboolean_wrap(num <= kutnumber_cast(args->data[0]));
+}
+
+static KutValue kutnum_ge(KutValue* data, KutTable* args) {
+    double num = data ? kutnumber_cast(*data) : 0.0;
+    if(args->len < 1 or not istype(args->data[0], kutnumber)) {
+        return kut_undefined;
+    }
+    return kutboolean_wrap(num >= kutnumber_cast(args->data[0]));
+}
+
+static KutValue kutnum_equal(KutValue* data, KutTable* args) {
+    double num = data ? kutnumber_cast(*data) : 0.0;
+    if(args->len < 1 or not istype(args->data[0], kutnumber)) {
+        return kut_undefined;
+    }
+    return kutboolean_wrap(num == kutnumber_cast(args->data[0]));
+}
+
 static KutValue kutnum_add(KutValue* data, KutTable* args) {
     double num = data ? kutnumber_cast(*data) : 0.0;
     if(args->len < 1 or not istype(args->data[0], kutnumber)) {
@@ -37,6 +77,14 @@ static KutValue kutnum_div(KutValue* data, KutTable* args) {
         return kut_undefined;
     }
     return kutnumber_wrap(num / kutnumber_cast(args->data[0]));
+}
+
+static KutValue kutnum_pow(KutValue* data, KutTable* args) {
+    double num = data ? kutnumber_cast(*data) : 0.0;
+    if(args->len < 1 or not istype(args->data[0], kutnumber)) {
+        return kut_undefined;
+    }
+    return kutnumber_wrap(pow(num, kutnumber_cast(args->data[0])));
 }
 
 static KutValue kutnum_sin(KutValue* data, KutTable* args) {

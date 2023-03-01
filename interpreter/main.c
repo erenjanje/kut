@@ -13,17 +13,19 @@ int main() {
     KutValue literals[] = {
         kutstring_wrap(kutstring_literal("+")),
         kutnumber_wrap(0),
-        kuttable_wrap(kuttable_literal(kutnumber_wrap(0), kutnumber_wrap(1), kutnumber_wrap(2), kutnumber_wrap(26))),
-        kutstring_wrap(kutstring_literal("eşle")),
+        kuttable_wrap(kuttable_literal(kutnumber_wrap(0), kutnumber_wrap(1), kutnumber_wrap(2), kutnumber_wrap(3), kutnumber_wrap(4))),
+        kutstring_wrap(kutstring_literal("sar")),
+        kutstring_wrap(kutstring_literal("*")),
     };
 
     const KutInstruction inner_instructions[] = {
-        kutfunc_getliteral(1, 0),
-        kutfunc_getclosure(2, 0),
-        kutfunc_pushvalue1(2),
-        kutfunc_methodcall(2, 0, 1),
-        kutfunc_setclosure(2, 0),
-        kutfunc_returncall(2),
+        kutfunc_getliteral(2, 0),
+        kutfunc_getliteral(3, 4),
+        kutfunc_pushvalue1(1),
+        kutfunc_methodcall(1, 1, 3),
+        kutfunc_pushvalue1(1),
+        kutfunc_methodcall(0, 0, 2),
+        kutfunc_returncall(0),
         kutfunc_noperation(),
     };
     KutFuncTemplate* inner_template = kutfunc_templateLiteral(inner_instructions, literals, 4, 0);
@@ -43,7 +45,7 @@ int main() {
         kutfunc_getliteral(3, 3),
         kutfunc_pushvalue1(1),
         kutfunc_methodcall(4, 2, 3),
-        kutfunc_returncall(1),
+        kutfunc_returncall(4),
         kutfunc_noperation(),
     };
     KutFuncTemplate template = {
@@ -56,8 +58,8 @@ int main() {
 
     KutValue func = kutfunc_wrap(kutfunc_new(NULL, &template));
     KutValue ret = kutfunc_run(&func, empty_table);
-    KutString* str = kut_tostring(&func, 0);
-    // printf("%.*s\n", kutstring_format(str));
+    KutString* str = kut_tostring(&ret, 0);
+    printf("%.*s\n", kutstring_format(str));
     kut_decref(&func);
     kut_decref(&ret);
     free(str);

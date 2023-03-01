@@ -1,6 +1,6 @@
 /* ANSI-C code produced by gperf version 3.1 */
 /* Command-line: gperf --output-file interpreter/kuttable.methods interpreter/kuttable.gperf  */
-/* Computed positions: -k'1' */
+/* Computed positions: -k'2' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
       && ('%' == 37) && ('&' == 38) && ('\'' == 39) && ('(' == 40) \
@@ -33,7 +33,7 @@
 struct KutDispatchGperfPair;
 #include <string.h>
 
-#define TOTAL_KEYWORDS 5
+#define TOTAL_KEYWORDS 7
 #define MIN_WORD_LENGTH 3
 #define MAX_WORD_LENGTH 11
 #define MIN_HASH_VALUE 3
@@ -61,17 +61,17 @@ kuttable_dispatchHash (register const char *str, register size_t len)
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
-      12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
-       5,  0, 12, 12, 12, 12, 12, 12, 12, 12,
-      12, 12, 12, 12, 12,  0, 12, 12, 12, 12,
-      12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
-      12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+      12, 12, 12, 12, 12, 12, 12,  7, 12, 12,
+      12, 12, 12, 12, 12,  5, 12,  5,  0, 12,
+      12,  0, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+      12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+      12, 12, 12, 12, 12,  0, 12,  0, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
@@ -79,7 +79,7 @@ kuttable_dispatchHash (register const char *str, register size_t len)
       12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 12
     };
-  return len + asso_values[(unsigned char)str[0]];
+  return len + asso_values[(unsigned char)str[1]];
 }
 
 const struct KutDispatchGperfPair *
@@ -87,23 +87,25 @@ kuttable_dispatchLookup (register const char *str, register size_t len)
 {
   static const unsigned char lengthtable[] =
     {
-       0,  0,  0,  3,  4,  5,  0,  0,  0,  4,  0, 11
+       0,  0,  0,  3,  4,  5,  0,  0,  3,  4,  3, 11
     };
   static const struct KutDispatchGperfPair wordlist[] =
     {
       {"",empty_dispatched}, {"",empty_dispatched},
       {"",empty_dispatched},
+#line 16 "interpreter/kuttable.gperf"
+      {"ele", kuttable_filter},
+#line 14 "interpreter/kuttable.gperf"
+      {"d\303\266n", kuttable_foreach},
+#line 15 "interpreter/kuttable.gperf"
+      {"e\305\237le", kuttable_map},
+      {"",empty_dispatched}, {"",empty_dispatched},
 #line 13 "interpreter/kuttable.gperf"
       {"sil", kuttable_delete},
 #line 11 "interpreter/kuttable.gperf"
       {"ekle", kuttable_insert},
-#line 15 "interpreter/kuttable.gperf"
-      {"e\305\237le", kuttable_map},
-      {"",empty_dispatched}, {"",empty_dispatched},
-      {"",empty_dispatched},
-#line 14 "interpreter/kuttable.gperf"
-      {"d\303\266n", kuttable_foreach},
-      {"",empty_dispatched},
+#line 17 "interpreter/kuttable.gperf"
+      {"sar", kuttable_reduce},
 #line 12 "interpreter/kuttable.gperf"
       {"sonuna-ekle", kuttable_append}
     };

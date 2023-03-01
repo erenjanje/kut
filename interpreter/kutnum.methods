@@ -1,6 +1,6 @@
 /* ANSI-C code produced by gperf version 3.1 */
 /* Command-line: gperf --output-file interpreter/kutnum.methods interpreter/kutnum.gperf  */
-/* Computed positions: -k'2,$' */
+/* Computed positions: -k'1,3-4' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
       && ('%' == 37) && ('&' == 38) && ('\'' == 39) && ('(' == 40) \
@@ -33,12 +33,12 @@
 struct KutDispatchGperfPair;
 #include <string.h>
 
-#define TOTAL_KEYWORDS 14
+#define TOTAL_KEYWORDS 20
 #define MIN_WORD_LENGTH 1
 #define MAX_WORD_LENGTH 13
 #define MIN_HASH_VALUE 1
-#define MAX_HASH_VALUE 19
-/* maximum key range = 19, duplicates = 0 */
+#define MAX_HASH_VALUE 31
+/* maximum key range = 31, duplicates = 0 */
 
 #ifdef __GNUC__
 __inline
@@ -52,44 +52,49 @@ kutnum_dispatchHash (register const char *str, register size_t len)
 {
   static const unsigned char asso_values[] =
     {
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 15, 10, 20,  5, 20,  0, 20, 20,
-       0, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20,  4, 20, 10,
-      20, 20, 20, 20, 20, 15, 20, 20, 20, 20,
-       0,  0, 20, 20,  0,  5,  0,  0, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-      20, 20, 20, 20, 20, 20
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 30, 25, 32, 20, 32, 15, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+       5, 32,  0, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 10, 32, 32,  0, 32, 10,
+      32,  0, 32, 32, 32, 15, 32, 32,  5,  5,
+       0,  5, 32, 32, 32,  5,  0, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32,  0,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+      32, 32, 32, 32, 32, 32
     };
   register unsigned int hval = len;
 
   switch (hval)
     {
       default:
-        hval += asso_values[(unsigned char)str[1]];
+        hval += asso_values[(unsigned char)str[3]];
       /*FALLTHROUGH*/
+      case 3:
+        hval += asso_values[(unsigned char)str[2]];
+      /*FALLTHROUGH*/
+      case 2:
       case 1:
+        hval += asso_values[(unsigned char)str[0]];
         break;
     }
-  return hval + asso_values[(unsigned char)str[len - 1]];
+  return hval;
 }
 
 const struct KutDispatchGperfPair *
@@ -97,45 +102,61 @@ kutnum_dispatchLookup (register const char *str, register size_t len)
 {
   static const unsigned char lengthtable[] =
     {
-       0,  1,  0,  3,  4,  5,  1,  3,  3,  4,  0,  1,  0, 13,
-       4,  0,  1,  0,  3,  4
+       0,  1,  2,  3,  4,  5,  1,  2,  3,  4,  0,  1,  0,  3,
+       4,  0,  1,  0,  3,  4,  5,  1,  0, 13,  0,  0,  1,  0,
+       0,  0,  0,  1
     };
   static const struct KutDispatchGperfPair wordlist[] =
     {
       {"",empty_dispatched},
+#line 13 "interpreter/kutnum.gperf"
+      {">", kutnum_gt},
 #line 14 "interpreter/kutnum.gperf"
-      {"/", kutnum_div},
-      {"",empty_dispatched},
-#line 18 "interpreter/kutnum.gperf"
-      {"cot", kutnum_cot},
-#line 21 "interpreter/kutnum.gperf"
-      {"atan", kutnum_atan},
-#line 22 "interpreter/kutnum.gperf"
-      {"atan2", kutnum_atan2},
-#line 12 "interpreter/kutnum.gperf"
-      {"-", kutnum_sub},
-#line 17 "interpreter/kutnum.gperf"
-      {"tan", kutnum_tan},
-#line 16 "interpreter/kutnum.gperf"
-      {"cos", kutnum_cos},
-#line 19 "interpreter/kutnum.gperf"
-      {"asin", kutnum_asin},
-      {"",empty_dispatched},
-#line 11 "interpreter/kutnum.gperf"
-      {"+", kutnum_add},
-      {"",empty_dispatched},
-#line 24 "interpreter/kutnum.gperf"
-      {"mutlak-de\304\237er", kutnum_abs},
+      {">=", kutnum_ge},
 #line 23 "interpreter/kutnum.gperf"
+      {"tan", kutnum_tan},
+#line 27 "interpreter/kutnum.gperf"
+      {"atan", kutnum_atan},
+#line 28 "interpreter/kutnum.gperf"
+      {"atan2", kutnum_atan2},
+#line 11 "interpreter/kutnum.gperf"
+      {"<", kutnum_lt},
+#line 12 "interpreter/kutnum.gperf"
+      {"<=", kutnum_le},
+#line 21 "interpreter/kutnum.gperf"
+      {"sin", kutnum_sin},
+#line 29 "interpreter/kutnum.gperf"
       {"acot", kutnum_acot},
       {"",empty_dispatched},
-#line 13 "interpreter/kutnum.gperf"
-      {"*", kutnum_mul},
-      {"",empty_dispatched},
-#line 15 "interpreter/kutnum.gperf"
-      {"sin", kutnum_sin},
 #line 20 "interpreter/kutnum.gperf"
-      {"acos", kutnum_acos}
+      {"^", kutnum_pow},
+      {"",empty_dispatched},
+#line 24 "interpreter/kutnum.gperf"
+      {"cot", kutnum_cot},
+#line 26 "interpreter/kutnum.gperf"
+      {"acos", kutnum_acos},
+      {"",empty_dispatched},
+#line 19 "interpreter/kutnum.gperf"
+      {"/", kutnum_div},
+      {"",empty_dispatched},
+#line 22 "interpreter/kutnum.gperf"
+      {"cos", kutnum_cos},
+#line 25 "interpreter/kutnum.gperf"
+      {"asin", kutnum_asin},
+#line 15 "interpreter/kutnum.gperf"
+      {"e\305\237it", kutnum_equal},
+#line 17 "interpreter/kutnum.gperf"
+      {"-", kutnum_sub},
+      {"",empty_dispatched},
+#line 30 "interpreter/kutnum.gperf"
+      {"mutlak-de\304\237er", kutnum_abs},
+      {"",empty_dispatched}, {"",empty_dispatched},
+#line 16 "interpreter/kutnum.gperf"
+      {"+", kutnum_add},
+      {"",empty_dispatched}, {"",empty_dispatched},
+      {"",empty_dispatched}, {"",empty_dispatched},
+#line 18 "interpreter/kutnum.gperf"
+      {"*", kutnum_mul}
     };
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)

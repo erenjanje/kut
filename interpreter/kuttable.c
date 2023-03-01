@@ -207,6 +207,65 @@ KutValue kuttable_map(KutValue* _self, KutTable* args) {
     return kuttable_wrap(ret);
 }
 
+KutValue kuttable_filter(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
+    KutFunc* func = NULL;
+    if(checkarg(args, 0, &kutfunc_methods)) {
+        func = kutfunc_cast(args->data[0]);
+    }
+    if(func == NULL) {
+        return kut_undefined;
+    }
+    KutValue wrapper = kutfunc_wrap(func);
+    KutTable* loop_args = kuttable_new(2);
+    KutTable* ret = kuttable_new(self->len);
+    loop_args->len = 1;
+    for(size_t i = 0; i < self->len; i++) {
+        kut_set(&loop_args->data[0], &self->data[i]);
+        KutValue val = kutfunc_run(&wrapper, loop_args);
+        if(kutboolean_cast(val)) {
+            ret->data[ret->len] = self->data[i];
+            ret->len += 1;
+        } else {
+            kut_decref(&val);
+        }
+    }
+    KutValue argswrap = kuttable_wrap(loop_args);
+    kut_decref(&argswrap);
+    return kuttable_wrap(ret);
+}
+
+KutValue kuttable_reduce(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
+    KutFunc* func = NULL;
+    if(checkarg(args, 0, &kutfunc_methods)) {
+        func = kutfunc_cast(args->data[0]);
+    }
+    if(func == NULL) {
+        return kut_undefined;
+    }
+    KutValue wrapper = kutfunc_wrap(func);
+    KutTable* loop_args = kuttable_new(2);
+    KutValue ret = self->data[0];
+    loop_args->len = 2;
+    for(size_t i = 0; i < self->len; i++) {
+        kut_set(&loop_args->data[0], &ret);
+        kut_set(&loop_args->data[1], &self->data[i]);
+        KutValue tmp_ret = kutfunc_run(&wrapper, loop_args);
+        kut_set(&ret, &tmp_ret);
+        kut_decref(&tmp_ret);
+    }
+    KutValue argswrap = kuttable_wrap(loop_args);
+    kut_decref(&argswrap);
+    return ret;
+}
+
 KutString* kuttable_tostring(KutValue* _self, size_t indent) {
     KutTable* self = _self ? kuttable_cast(*_self) : NULL;
     if(self == NULL) {
