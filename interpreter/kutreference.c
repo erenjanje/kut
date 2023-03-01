@@ -42,6 +42,7 @@ void kutreference_decref(KutValue* _self) {
     if(self->reference_count == 0)
         return;
     if(self->reference_count == 1) {
+        kut_decref(self);
         free(self);
         return;
     }
@@ -60,7 +61,8 @@ KutString* kutreference_tostring(KutValue* _self, size_t indent) {
     KutString* ret = kutstring_zero(inner_str->len + sizeof("<>")-1 + indent*(sizeof("\t")-1));
     memset(ret->data, '\t', indent);
     snprintf(ret->data+indent, ret->len+1, "<%.*s>", kutstring_format(inner_str));
-    free(inner_str);
+    KutValue inner_wrapper = kutstring_wrap(inner_str);
+    kut_decref(&inner_wrapper);
     return ret;
 }
 

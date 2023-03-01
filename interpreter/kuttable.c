@@ -1,5 +1,6 @@
 #include "kuttable.h"
 #include "kutstring.h"
+#include "kutfunc.h"
 
 #include <stdio.h>
 #include <iso646.h>
@@ -54,12 +55,12 @@ void kuttable_decref(KutValue* _self) {
     if(self == NULL) {
         return;
     }
-    for(size_t i = 0; i < self->len; i++) {
-        kut_decref(&self->data[i]);
-    }
     if(self->reference_count == 0)
         return;
     if(self->reference_count == 1) {
+        for(size_t i = 0; i < self->len; i++) {
+            kut_decref(&self->data[i]);
+        }
         free(self->data);
         free(self);
         return;
@@ -152,6 +153,58 @@ KutValue kuttable_clear(KutValue* _self, KutTable* args) {
     }
     self->len = 0;
     return kut_undefined;
+}
+
+KutValue kuttable_foreach(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
+    KutFunc* func = NULL;
+    if(checkarg(args, 0, &kutfunc_methods)) {
+        func = kutfunc_cast(args->data[0]);
+    }
+    if(func == NULL) {
+        return kut_undefined;
+    }
+    KutValue wrapper = kutfunc_wrap(func);
+    KutTable* loop_args = kuttable_new(2);
+    loop_args->len = 1;
+    for(size_t i = 0; i < self->len; i++) {
+        kut_set(&loop_args->data[0], &self->data[i]);
+        KutValue tmpret = kutfunc_run(&wrapper, loop_args);
+        kut_decref(&tmpret);
+    }
+    KutValue argswrap = kuttable_wrap(loop_args);
+    kut_decref(&argswrap);
+    return kut_undefined;
+}
+
+KutValue kuttable_map(KutValue* _self, KutTable* args) {
+    KutTable* self = _self ? kuttable_cast(*_self) : NULL;
+    if(self == NULL) {
+        return kut_undefined;
+    }
+    KutFunc* func = NULL;
+    if(checkarg(args, 0, &kutfunc_methods)) {
+        func = kutfunc_cast(args->data[0]);
+    }
+    if(func == NULL) {
+        return kut_undefined;
+    }
+    KutValue wrapper = kutfunc_wrap(func);
+    KutTable* loop_args = kuttable_new(2);
+    KutTable* ret = kuttable_new(self->len);
+    ret->len = self->len;
+    loop_args->len = 1;
+    for(size_t i = 0; i < self->len; i++) {
+        kut_set(&loop_args->data[0], &self->data[i]);
+        KutValue val = kutfunc_run(&wrapper, loop_args);
+        ret->data[i] = val;
+    }
+    KutValue argswrap = kuttable_wrap(loop_args);
+    kut_decref(&argswrap);
+    return kuttable_wrap(ret);
 }
 
 KutString* kuttable_tostring(KutValue* _self, size_t indent) {

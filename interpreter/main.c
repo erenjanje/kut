@@ -11,19 +11,22 @@
 
 int main() {    
     KutValue literals[] = {
-        kutnumber_wrap(25),
-        kutnumber_wrap(16),
-        kutstring_wrap(kutstring_literal("atan2")),
-        kutstring_wrap(kutstring_literal("çağır")),
+        kutstring_wrap(kutstring_literal("+")),
+        kutnumber_wrap(0),
+        kuttable_wrap(kuttable_literal(kutnumber_wrap(0), kutnumber_wrap(1), kutnumber_wrap(2), kutnumber_wrap(26))),
+        kutstring_wrap(kutstring_literal("eşle")),
     };
 
     const KutInstruction inner_instructions[] = {
-        kutfunc_gettmplate(0, 1),
-        kutfunc_getclosure(1, 0),
-        kutfunc_returncall(0),
+        kutfunc_getliteral(1, 0),
+        kutfunc_getclosure(2, 0),
+        kutfunc_pushvalue1(2),
+        kutfunc_methodcall(2, 0, 1),
+        kutfunc_setclosure(2, 0),
+        kutfunc_returncall(2),
         kutfunc_noperation(),
     };
-    KutFuncTemplate* inner_template = kutfunc_templateLiteral(inner_instructions, literals, 2, 2);
+    KutFuncTemplate* inner_template = kutfunc_templateLiteral(inner_instructions, literals, 4, 0);
     const KutFuncTemplate* more_inner_template = kutfunc_templateLiteral(inner_instructions, literals, 2, 256+0);
     
     const KutFuncTemplate* templates[] = {
@@ -34,10 +37,12 @@ int main() {
     inner_template->function_templates = templates;
 
     const KutInstruction instructions[] = {
+        kutfunc_gettmplate(1, 0),
+        kutfunc_getliteral(0, 1),
         kutfunc_getliteral(2, 2),
-        kutfunc_gettmplate(0, 0),
         kutfunc_getliteral(3, 3),
-        kutfunc_methodcall(6, 0, 3),
+        kutfunc_pushvalue1(1),
+        kutfunc_methodcall(4, 2, 3),
         kutfunc_returncall(1),
         kutfunc_noperation(),
     };

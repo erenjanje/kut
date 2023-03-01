@@ -63,7 +63,7 @@ struct KutDispatchGperfPair {
 };
 
 #define istype(v, T) ((v).methods == &T##_methods)
-bool checkarg(KutTable* args, size_t index, KutMandatoryMethodsTable* type);
+bool checkarg(KutTable* args, size_t index, const KutMandatoryMethodsTable* type);
 
 static const KutValue kut_nil = {.methods = NULL};
 static const KutValue kut_undefined = {.methods = &kutundefined_methods};

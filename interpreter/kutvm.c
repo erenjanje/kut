@@ -54,6 +54,8 @@ bool kutvm_methodcall(KutFunc* func, KutInstruction instruction) {
     KutValue* retptr = kutvm_getRegisterPointer(func, return_position);
     kut_set(retptr, &ret);
     kut_decref(&ret);
+    KutValue call_stack = kuttable_wrap(func->call_stack);
+    kuttable_clear(&call_stack, empty_table);
     return false;
 }
 
@@ -95,6 +97,24 @@ bool kutvm_setclosure(KutFunc* func, KutInstruction instruction) {
     return false;
 }
 
+bool kutvm_load16litr(KutFunc* func, KutInstruction instruction) {
+    KutValue val = kutnumber_wrap((int16_t)instruction.l.literal);
+    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &val);
+    return false;
+}
+
+bool kutvm_loadnilval(KutFunc* func, KutInstruction instruction) {
+    KutValue val = kut_nil;
+    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &val);
+    return false;
+}
+
+bool kutvm_loadundefn(KutFunc* func, KutInstruction instruction) {
+    KutValue val = kut_undefined;
+    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &val);
+    return false;
+}
+
 bool kutvm_mvregister(KutFunc* func, KutInstruction instruction) {
     kut_set(kutvm_getRegisterPointer(func, instruction.r.reg0), kutvm_getRegisterPointer(func, instruction.r.reg1));
     return false;
@@ -102,6 +122,28 @@ bool kutvm_mvregister(KutFunc* func, KutInstruction instruction) {
 
 bool kutvm_swapregist(KutFunc* func, KutInstruction instruction) {
     kut_swap(kutvm_getRegisterPointer(func, instruction.r.reg0), kutvm_getRegisterPointer(func, instruction.r.reg1));
+    return false;
+}
+
+bool kutvm_branchwith(KutFunc* func, KutInstruction instruction) {
+    bool condition = kutboolean_cast(kutvm_getRegister(func, instruction.r.reg0));
+    if(condition) {
+        KutFunc* called = kutfunc_cast(kutvm_getRegister(func, instruction.r.reg1));
+        KutValue tmp = kutfunc_wrap(called);
+        if(called) {
+            kutfunc_run(&tmp, empty_table);
+        } else {
+            fprintf(stderr, "Branch should be a function!\n");
+        }
+    } else {
+        KutFunc* called = kutfunc_cast(kutvm_getRegister(func, instruction.r.reg2));
+        KutValue tmp = kutfunc_wrap(called);
+        if(called) {
+            kutfunc_run(&tmp, empty_table);
+        } else {
+            fprintf(stderr, "Branch should be a function!\n");
+        }
+    }
     return false;
 }
 
@@ -123,8 +165,12 @@ KutInstructionHandler instruction_handlers[] = {
     [KI_PUSHVALUE3] = kutvm_pushvalue3,
     [KI_MVREGISTER] = kutvm_mvregister,
     [KI_SWAPREGIST] = kutvm_swapregist,
+    [KI_BRANCHWITH] = kutvm_branchwith,
     [KI_GETLITERAL] = kutvm_getliteral,
     [KI_GETCLOSURE] = kutvm_getclosure,
     [KI_SETCLOSURE] = kutvm_setclosure,
     [KI_GETTMPLATE] = kutvm_gettmplate,
+    [KI_LOAD16LITR] = kutvm_load16litr,
+    [KI_LOADNILVAL] = kutvm_loadnilval,
+    [KI_LOADUNDEFN] = kutvm_loadundefn,
 };

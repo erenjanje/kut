@@ -26,6 +26,7 @@ KutValue kuttable_append(KutValue* self, KutTable* index);
 KutValue kuttable_insert(KutValue* self, KutTable* index);
 KutValue kuttable_delete(KutValue* self, KutTable* index);
 KutValue kuttable_clear(KutValue* self, KutTable* args);
+KutValue kuttable_foreach(KutValue* self, KutTable* args);
 
 #define kuttable_literal(first, ...) (KutTable*)(KutTable[]){{\
     .reference_count = 0,\

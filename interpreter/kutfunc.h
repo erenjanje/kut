@@ -38,11 +38,15 @@ enum KutInstructionName {
     __KI_PUSHVALUE3,
     __KI_MVREGISTER,
     __KI_SWAPREGIST,
+    __KI_BRANCHWITH,
 
     __KI_GETLITERAL,
     __KI_GETCLOSURE,
     __KI_SETCLOSURE,
     __KI_GETTMPLATE,
+    __KI_LOAD16LITR,
+    __KI_LOADNILVAL,
+    __KI_LOADUNDEFN,
 };
 
 typedef enum KutEmptyInstructionName {
@@ -57,6 +61,7 @@ typedef enum KutRegisterInstructionName {
     KI_PUSHVALUE3 = __KI_PUSHVALUE3,
     KI_MVREGISTER = __KI_MVREGISTER,
     KI_SWAPREGIST = __KI_SWAPREGIST,
+    KI_BRANCHWITH = __KI_BRANCHWITH,
 } KutRegisterInstructionName;
 
 typedef enum KutLiteralInstructionName {
@@ -64,6 +69,9 @@ typedef enum KutLiteralInstructionName {
     KI_GETCLOSURE = __KI_GETCLOSURE,
     KI_SETCLOSURE = __KI_SETCLOSURE,
     KI_GETTMPLATE = __KI_GETTMPLATE,
+    KI_LOAD16LITR = __KI_LOAD16LITR,
+    KI_LOADNILVAL = __KI_LOADNILVAL,
+    KI_LOADUNDEFN = __KI_LOADUNDEFN,
 } KutLiteralInstructionName;
 
 enum KutSpecialRegister {

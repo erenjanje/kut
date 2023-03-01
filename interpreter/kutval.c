@@ -37,7 +37,7 @@ const KutMandatoryMethodsTable kutnil_methods = {
 
 #undef checkarg
 
-bool checkarg(KutTable* args, size_t index, KutMandatoryMethodsTable* type) {
+bool checkarg(KutTable* args, size_t index, const KutMandatoryMethodsTable* type) {
     return ((args->len >= index) and args->data[index].methods == type);
 }
 

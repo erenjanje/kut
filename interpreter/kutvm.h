@@ -21,6 +21,6 @@ bool kutvm_gettmplate(KutFunc* func, KutInstruction instruction);
 
 typedef bool (*KutInstructionHandler)(KutFunc* func, KutInstruction instruction);
 
-extern KutInstructionHandler instruction_handlers[12];
+extern KutInstructionHandler instruction_handlers[];
 
 #endif

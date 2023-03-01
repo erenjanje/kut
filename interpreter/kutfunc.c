@@ -90,6 +90,7 @@ KutValue kutfunc_run(KutValue* _self, KutTable* args) {
     if(self == NULL) {
         return kut_undefined;
     }
+    memcpy(self->registers, args->data, args->len*sizeof(args->data[0]));
     bool finished = false;
     for(size_t i = 0; not finished; i++) {
         printf("Instruction %zu:\n", i);
@@ -101,9 +102,6 @@ KutValue kutfunc_run(KutValue* _self, KutTable* args) {
     }
     for(size_t i = 0; i < self->register_count; i++) {
         kut_decref(&self->registers[i]);
-    }
-    for(size_t i = 0; i < self->capture_count; i++) {
-        kut_decref(&self->captures[i]);
     }
     KutValue ret = self->ret;
     self->ret = kut_undefined;
@@ -132,10 +130,14 @@ const char* kutfunc_serializeInstruction(KutInstruction instruction) {
             case KI_PUSHVALUE3: return "PUSHVALUE3\t";
             case KI_MVREGISTER: return "MVREGISTER\t";
             case KI_SWAPREGIST: return "SWAPREGIST\t";
+            case KI_BRANCHWITH: return "BRANCHWITH\t";
             case KI_GETLITERAL: return "GETLITERAL\t";
             case KI_GETCLOSURE: return "GETCLOSURE\t";
             case KI_SETCLOSURE: return "SETCLOSURE\t";
             case KI_GETTMPLATE: return "GETTMPLATE\t";
+            case KI_LOAD16LITR: return "LOAD16LITR\t";
+            case KI_LOADNILVAL: return "LOADNILVAL\t";
+            case KI_LOADUNDEFN: return "LOADUNDEFN\t";
             default: return "UNKNOWN_INSTRUCTION\n";
     }
 }
@@ -153,12 +155,14 @@ KutValue kutfunc_debug(KutValue* _self) {
     }
     KutValue registers = kuttable_wrap(kuttable_directPointer(self->register_count, self->registers));
     KutValue captures = kuttable_wrap(kuttable_directPointer(self->capture_count, self->captures));
+    KutValue call_stack = kuttable_wrap(self->call_stack);
     KutString* register_string = kut_tostring(&registers, 0);
     KutString* capture_string = kut_tostring(&captures, 0);
+    KutString* call_stack_string = kut_tostring(&call_stack, 0);
     if(register_string == NULL) {
         return kut_undefined;
     }
-    size_t total_length = snprintf(NULL, 0, "func@%p\n\n\n", self) + register_string->len + capture_string->len;
+    size_t total_length = snprintf(NULL, 0, "func@%p\n\n\n\n", self) + register_string->len + capture_string->len + call_stack_string->len;
     for(size_t i = 0; self->instructions[i].r.instruction != KI_NOPERATION; i++) {
         KutInstruction current_instruction = self->instructions[i];
         total_length += snprintf(NULL, 0, "   %s", kutfunc_serializeInstruction(current_instruction));
@@ -168,13 +172,13 @@ KutValue kutfunc_debug(KutValue* _self) {
                 break;
             
             case KI_METHODCALL:
-                total_length += snprintf(NULL, 0, "retn: %5u\tself: %5u\tmssg: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
+                total_length += snprintf(NULL, 0, "ret : %5u\tself: %5u\tmsg : %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
                 break;
             case KI_RETURNCALL:
-                total_length += snprintf(NULL, 0, "retn: %5u\n", current_instruction.r.reg0);
+                total_length += snprintf(NULL, 0, "ret : %5u\n", current_instruction.r.reg0);
                 break;
             case KI_PUSHVALUE1:
-                total_length += snprintf(NULL, 0, "val0: %5u\n", current_instruction.r.reg0);
+                total_length += snprintf(NULL, 0, "val : %5u\n", current_instruction.r.reg0);
                 break;
             case KI_PUSHVALUE2:
                 total_length += snprintf(NULL, 0, "val1: %5u\tval2: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
@@ -183,17 +187,26 @@ KutValue kutfunc_debug(KutValue* _self) {
                 total_length += snprintf(NULL, 0, "val1: %5u\tval2: %5u\tval3: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
                 break;
             case KI_MVREGISTER:
-                total_length += snprintf(NULL, 0, "dest: %5u\tsorc: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
+                total_length += snprintf(NULL, 0, "dest: %5u\tsrc : %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
                 break;
             case KI_SWAPREGIST:
                 total_length += snprintf(NULL, 0, "reg1: %5u\treg2: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
+                break;
+            case KI_BRANCHWITH:
+                total_length += snprintf(NULL, 0, "cond: %5u\tif  : %5u\telse: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
                 break;
             
             case KI_GETLITERAL:
             case KI_GETCLOSURE:
             case KI_SETCLOSURE:
             case KI_GETTMPLATE:
+            case KI_LOAD16LITR:
                 total_length += snprintf(NULL, 0, "regs: %5u\tlitr: %5u\n", current_instruction.l.reg, current_instruction.l.literal);
+                break;
+            
+            case KI_LOADNILVAL:
+            case KI_LOADUNDEFN:
+                total_length += snprintf(NULL, 0, "reg : %5u\n", current_instruction.l.reg);
                 break;
         }
     }
@@ -204,8 +217,14 @@ KutValue kutfunc_debug(KutValue* _self) {
     offset += register_string->len;
     ret->data[offset] = '\n';
     offset += 1;
+
     memcpy(ret->data+offset, capture_string->data, capture_string->len);
     offset += capture_string->len;
+    ret->data[offset] = '\n';
+    offset += 1;
+
+    memcpy(ret->data+offset, call_stack_string->data, call_stack_string->len);
+    offset += call_stack_string->len;
     ret->data[offset] = '\n';
     offset += 1;
     for(size_t i = 0; self->instructions[i].r.instruction != KI_NOPERATION; i++) {
@@ -237,18 +256,29 @@ KutValue kutfunc_debug(KutValue* _self) {
             case KI_SWAPREGIST:
                 offset += snprintf(ret->data+offset, ret->len-offset+1, "reg1: %5u\treg2: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1);
                 break;
+            case KI_BRANCHWITH:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "cond: %5u\tif  : %5u\telse: %5u\n", current_instruction.r.reg0, current_instruction.r.reg1, current_instruction.r.reg2);
+                break;
             
             case KI_GETLITERAL:
             case KI_GETCLOSURE:
             case KI_SETCLOSURE:
             case KI_GETTMPLATE:
+            case KI_LOAD16LITR:
                 offset += snprintf(ret->data+offset, ret->len-offset+1, "regs: %5u\tlitr: %5u\n", current_instruction.l.reg, current_instruction.l.literal);
+                break;
+
+            case KI_LOADNILVAL:
+            case KI_LOADUNDEFN:
+                offset += snprintf(ret->data+offset, ret->len-offset+1, "reg : %5u\n", current_instruction.l.reg);
                 break;
         }
     }
     KutValue regstr = kutstring_wrap(register_string);
     kut_decref(&regstr);
     regstr = kutstring_wrap(capture_string);
+    kut_decref(&regstr);
+    regstr = kutstring_wrap(call_stack_string);
     kut_decref(&regstr);
     free(kuttable_cast(registers));
     free(kuttable_cast(captures));
@@ -309,6 +339,10 @@ KutInstruction kutfunc_swapregist(uint8_t reg1, uint8_t reg2) {
     return (KutInstruction){.r = {.instruction = KI_SWAPREGIST, .reg0 = reg1, .reg1 = reg2, .reg2 = 0}};
 }
 
+KutInstruction kutfunc_branchwith(uint8_t condition, uint8_t then, uint8_t otherwise) {
+    return (KutInstruction){.r = {.instruction = KI_BRANCHWITH, .reg0 = condition, .reg1 = then, .reg2 = otherwise}};
+}
+
 KutInstruction kutfunc_getliteral(uint8_t reg, uint16_t literal) {
     return (KutInstruction){.l = {.instruction = KI_GETLITERAL, .reg = reg, .literal = literal}};
 }
@@ -323,6 +357,18 @@ KutInstruction kutfunc_setclosure(uint8_t reg, uint16_t literal) {
 
 KutInstruction kutfunc_gettmplate(uint8_t reg, uint16_t literal) {
     return (KutInstruction){.l = {.instruction = KI_GETTMPLATE, .reg = reg, .literal = literal}};
+}
+
+KutInstruction kutfunc_load16litr(uint8_t reg, uint16_t literal) {
+    return (KutInstruction){.l = {.instruction = KI_LOAD16LITR, .reg = reg, .literal = literal}};
+}
+
+KutInstruction kutfunc_loadnilval(uint8_t reg) {
+    return (KutInstruction){.l = {.instruction = KI_LOADNILVAL, .reg = reg, .literal = 0}};
+}
+
+KutInstruction kutfunc_loadundefn(uint8_t reg) {
+    return (KutInstruction){.l = {.instruction = KI_LOADUNDEFN, .reg = reg, .literal = 0}};
 }
 
 const KutMandatoryMethodsTable kutfunc_methods = {
