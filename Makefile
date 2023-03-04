@@ -9,7 +9,9 @@ SRCDIR=interpreter
 OBJDIR=obj
 BUILDDIR=.
 BINDIR=.
-SRCS = $(wildcard $(SRCDIR)/*.$(SRC_EXTENSION)) $(wildcard ./*.$(SRC_EXTENSION))
+CURDIRSRCS = $(wildcard ./*.$(SRC_EXTENSION))
+SRCS = $(wildcard $(SRCDIR)/*.$(SRC_EXTENSION))
+CURDIROBJS = $(patsubst $(SRCDIR)/%.$(SRC_EXTENSION), $(OBJDIR)/%.$(OBJ_EXTENSION), $(CURDIRSRCS))
 OBJS = $(patsubst $(SRCDIR)/%.$(SRC_EXTENSION), $(OBJDIR)/%.$(OBJ_EXTENSION), $(SRCS))
 DEPENDS = $(patsubst $(SRCDIR)/%.$(SRC_EXTENSION),%.d,$(SRCS))
 HEADERS = $(wildcard $(INCDIR)/*.h)
@@ -29,7 +31,7 @@ run: $(METHODFILES) build
 	@echo
 .PHONY: run
 
-build: $(OBJS)
+build: $(OBJS) $(CURDIROBJS)
 	@$(COMPILER) $(filter-out %.h,$^) -o $(BINDIR)/$(EXECNAME) $(LDFLAGS)
 	@echo LD $<
 .PHONY: 

@@ -1,15 +1,16 @@
-#include "kutval.h"
-#include "kutstring.h"
-#include "kuttable.h"
-#include "kutfunc.h"
-#include "kutreference.h"
+#include "interpreter/kutval.h"
+#include "interpreter/kutstring.h"
+#include "interpreter/kuttable.h"
+#include "interpreter/kutfunc.h"
+#include "interpreter/kutreference.h"
+
+#include "kutparser.h"
 
 #include <stdio.h>
 #include <math.h>
 #include <inttypes.h>
 
-
-int main() {    
+void test_interpreter() {
     KutValue literals[] = {
         kutstring_wrap(kutstring_literal("+")),
         kutnumber_wrap(0),
@@ -65,4 +66,22 @@ int main() {
     free(str);
     str = NULL;
     return 0;
+}
+
+void test_parser() {
+    const char* str =
+        "x 5 olsun\\\n"
+        "ekran x yazsin\n"
+        "t [(x -2 ^) 2 3] olsun\n"
+        "\n# a\n";
+    size_t len = strlen(str);
+    const char* endptr = str+len;
+    KutToken tok = (KutToken){.type = KTOK_START};
+    while((tok = next_token(&str, endptr)).type != KTOK_INVALID) {
+        debug_token(tok);
+    }
+}
+
+int main() {    
+    test_parser();
 }

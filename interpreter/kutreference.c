@@ -4,6 +4,9 @@
 #include <stdio.h>
 
 KutValue* kutreference_new(KutValue* ref) {
+    if(istype(*ref, kutreference)) {
+        return kutreference_cast(*ref);
+    }
     KutValue* ret = calloc(1, sizeof(*ret));
     *ret = *ref;
     *ref = kutreference_wrap(ret);
