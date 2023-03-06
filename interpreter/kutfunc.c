@@ -112,17 +112,18 @@ KutInstruction kutfunc_emptyInstruction(KutEmptyInstructionName name) {
     return (KutInstruction){.l = {.instruction = name, .reg = 0, .literal = 0}};
 }
 
-KutInstruction kutfunc_registerInstruction(KutRegisterInstructionName name, uint8_t reg0, uint8_t reg1, uint8_t reg2) {
+KutInstruction kutfunc_registerInstruction(KutRegisterInstructionName name, int8_t reg0, int8_t reg1, int8_t reg2) {
     return (KutInstruction){.r = {.instruction = name, .reg0 = reg0, .reg1 = reg1, .reg2 = reg2}};
 }
 
-KutInstruction kutfunc_literalInstruction(KutLiteralInstructionName name, uint8_t reg, uint16_t literal) {
+KutInstruction kutfunc_literalInstruction(KutLiteralInstructionName name, int8_t reg, uint16_t literal) {
     return (KutInstruction){.l = {.instruction = name, .reg = reg, .literal = literal}};
 }
 
 const char* kutfunc_serializeInstruction(KutInstruction instruction) {
     switch(instruction.r.instruction) {
             case KI_NOPERATION: return "NOPERATION\t";
+            case KI_NEWCLLSTAK: return "NEWCLLSTAK\t";
             case KI_METHODCALL: return "METHODCALL\t";
             case KI_RETURNCALL: return "RETURNCALL\t";
             case KI_PUSHVALUE1: return "PUSHVALUE1\t";
@@ -138,8 +139,64 @@ const char* kutfunc_serializeInstruction(KutInstruction instruction) {
             case KI_LOAD16LITR: return "LOAD16LITR\t";
             case KI_LOADNILVAL: return "LOADNILVAL\t";
             case KI_LOADUNDEFN: return "LOADUNDEFN\t";
-            default: return "UNKNOWN_INSTRUCTION\n";
+            default: return "UNKNOWN_INSTRUCTION\t";
     }
+}
+
+void kutfunc_debugInstruction(KutInstruction instruction) {
+    printf("%-16s ", kutfunc_serializeInstruction(instruction));
+    switch(instruction.r.instruction) {
+        case KI_NOPERATION:
+            break;
+        case KI_NEWCLLSTAK:
+            break;
+        case KI_METHODCALL:
+            printf("ret  %5d self %5d msg  %5d", instruction.r.reg0, instruction.r.reg1, instruction.r.reg2);
+            break;
+        case KI_RETURNCALL:
+            printf("ret  %5d", instruction.r.reg0);
+            break;
+        case KI_PUSHVALUE1:
+            printf("val  %5d", instruction.r.reg0);
+            break;
+        case KI_PUSHVALUE2:
+            printf("val1 %5d val2 %5d", instruction.r.reg0, instruction.r.reg1);
+            break;
+        case KI_PUSHVALUE3:
+            printf("val1 %5d val2 %5d val3 %5d", instruction.r.reg0, instruction.r.reg1, instruction.r.reg2);
+            break;
+        case KI_MVREGISTER:
+            printf("dest %5d src  %5d", instruction.r.reg0, instruction.r.reg1);
+            break;
+        case KI_SWAPREGIST:
+            printf("reg1 %5d reg2 %5d", instruction.r.reg0, instruction.r.reg1);
+            break;
+        case KI_BRANCHWITH:
+            printf("cond %5d if   %5d else %5d", instruction.r.reg0, instruction.r.reg1, instruction.r.reg2);
+            break;
+        case KI_GETLITERAL:
+            printf("reg  %5d lit  %5d", instruction.l.reg, instruction.l.literal);
+            break;
+        case KI_GETCLOSURE:
+            printf("reg  %5d lit  %5d", instruction.l.reg, instruction.l.literal);
+            break;
+        case KI_SETCLOSURE:
+            printf("reg  %5d lit  %5d", instruction.l.reg, instruction.l.literal);
+            break;
+        case KI_GETTMPLATE:
+            printf("reg  %5d lit  %5d", instruction.l.reg, instruction.l.literal);
+            break;
+        case KI_LOAD16LITR:
+            printf("reg  %5d lit  %5d", instruction.l.reg, instruction.l.literal);
+            break;
+        case KI_LOADNILVAL:
+            printf("reg  %5d", instruction.l.reg);
+            break;
+        case KI_LOADUNDEFN:
+            printf("reg  %5d", instruction.l.reg);
+            break;
+    }
+    printf("\n");
 }
 
 #include <stdio.h>
@@ -311,63 +368,67 @@ KutInstruction kutfunc_noperation(void) {
     return (KutInstruction){.l = {.instruction = KI_NOPERATION, .reg = 0, .literal = 0}};
 }
 
-KutInstruction kutfunc_methodcall(uint8_t return_position, uint8_t self, uint8_t message) {
+KutInstruction kutfunc_newcllstak(void) {
+    return (KutInstruction){.l = {.instruction = KI_NEWCLLSTAK, .reg = 0, .literal = 0}};
+}
+
+KutInstruction kutfunc_methodcall(int8_t return_position, int8_t self, int8_t message) {
     return (KutInstruction){.r = {.instruction = KI_METHODCALL, .reg0 = return_position, .reg1 = self, .reg2 = message}};
 }
 
-KutInstruction kutfunc_returncall(uint8_t returned_value) {
+KutInstruction kutfunc_returncall(int8_t returned_value) {
     return (KutInstruction){.r = {.instruction = KI_RETURNCALL, .reg0 = returned_value, .reg1 = 0, .reg2 = 0}};
 }
 
-KutInstruction kutfunc_pushvalue1(uint8_t value) {
+KutInstruction kutfunc_pushvalue1(int8_t value) {
     return (KutInstruction){.r = {.instruction = KI_PUSHVALUE1, .reg0 = value, .reg1 = 0, .reg2 = 0}};
 }
 
-KutInstruction kutfunc_pushvalue2(uint8_t value1, uint8_t value2) {
+KutInstruction kutfunc_pushvalue2(int8_t value1, int8_t value2) {
     return (KutInstruction){.r = {.instruction = KI_PUSHVALUE2, .reg0 = value1, .reg1 = value2, .reg2 = 0}};
 }
 
-KutInstruction kutfunc_pushvalue3(uint8_t value1, uint8_t value2, uint8_t value3) {
+KutInstruction kutfunc_pushvalue3(int8_t value1, int8_t value2, int8_t value3) {
     return (KutInstruction){.r = {.instruction = KI_PUSHVALUE3, .reg0 = value1, .reg1 = value2, .reg2 = value3}};
 }
 
-KutInstruction kutfunc_mvregister(uint8_t destination, uint8_t source) {
+KutInstruction kutfunc_mvregister(int8_t destination, int8_t source) {
     return (KutInstruction){.r = {.instruction = KI_MVREGISTER, .reg0 = destination, .reg1 = source, .reg2 = 0}};
 }
 
-KutInstruction kutfunc_swapregist(uint8_t reg1, uint8_t reg2) {
+KutInstruction kutfunc_swapregist(int8_t reg1, int8_t reg2) {
     return (KutInstruction){.r = {.instruction = KI_SWAPREGIST, .reg0 = reg1, .reg1 = reg2, .reg2 = 0}};
 }
 
-KutInstruction kutfunc_branchwith(uint8_t condition, uint8_t then, uint8_t otherwise) {
+KutInstruction kutfunc_branchwith(int8_t condition, int8_t then, int8_t otherwise) {
     return (KutInstruction){.r = {.instruction = KI_BRANCHWITH, .reg0 = condition, .reg1 = then, .reg2 = otherwise}};
 }
 
-KutInstruction kutfunc_getliteral(uint8_t reg, uint16_t literal) {
+KutInstruction kutfunc_getliteral(int8_t reg, uint16_t literal) {
     return (KutInstruction){.l = {.instruction = KI_GETLITERAL, .reg = reg, .literal = literal}};
 }
 
-KutInstruction kutfunc_getclosure(uint8_t reg, uint16_t literal) {
+KutInstruction kutfunc_getclosure(int8_t reg, uint16_t literal) {
     return (KutInstruction){.l = {.instruction = KI_GETCLOSURE, .reg = reg, .literal = literal}};
 }
 
-KutInstruction kutfunc_setclosure(uint8_t reg, uint16_t literal) {
+KutInstruction kutfunc_setclosure(int8_t reg, uint16_t literal) {
     return (KutInstruction){.l = {.instruction = KI_SETCLOSURE, .reg = reg, .literal = literal}};
 }
 
-KutInstruction kutfunc_gettmplate(uint8_t reg, uint16_t literal) {
+KutInstruction kutfunc_gettmplate(int8_t reg, uint16_t literal) {
     return (KutInstruction){.l = {.instruction = KI_GETTMPLATE, .reg = reg, .literal = literal}};
 }
 
-KutInstruction kutfunc_load16litr(uint8_t reg, uint16_t literal) {
+KutInstruction kutfunc_load16litr(int8_t reg, uint16_t literal) {
     return (KutInstruction){.l = {.instruction = KI_LOAD16LITR, .reg = reg, .literal = literal}};
 }
 
-KutInstruction kutfunc_loadnilval(uint8_t reg) {
+KutInstruction kutfunc_loadnilval(int8_t reg) {
     return (KutInstruction){.l = {.instruction = KI_LOADNILVAL, .reg = reg, .literal = 0}};
 }
 
-KutInstruction kutfunc_loadundefn(uint8_t reg) {
+KutInstruction kutfunc_loadundefn(int8_t reg) {
     return (KutInstruction){.l = {.instruction = KI_LOADUNDEFN, .reg = reg, .literal = 0}};
 }
 

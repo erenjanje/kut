@@ -7,8 +7,11 @@ typedef struct KutFuncTemplate KutFuncTemplate;
 typedef struct KutFunc KutFunc;
 
 struct KutFuncTemplate {
-    const KutInstruction* instructions;
+    size_t instruction_count;
+    KutInstruction* instructions;
+    size_t literal_count;
     KutValue* literals;
+    size_t template_count;
     const KutFuncTemplate** function_templates;
     size_t register_count;
     size_t capture_count;
@@ -17,8 +20,11 @@ struct KutFuncTemplate {
 
 struct KutFunc {
     size_t reference_count;
+    size_t instruction_count;
     const KutInstruction* instructions;
+    size_t literal_count;
     KutValue* literals;
+    size_t template_count;
     const KutFuncTemplate** function_templates;
     KutValue ret;
     KutTable* call_stack;
@@ -30,6 +36,7 @@ struct KutFunc {
 
 enum KutInstructionName {
     __KI_NOPERATION,
+    __KI_NEWCLLSTAK,
 
     __KI_METHODCALL,
     __KI_RETURNCALL,
@@ -50,7 +57,8 @@ enum KutInstructionName {
 };
 
 typedef enum KutEmptyInstructionName {
-    KI_NOPERATION = __KI_NOPERATION
+    KI_NOPERATION = __KI_NOPERATION,
+    KI_NEWCLLSTAK = __KI_NEWCLLSTAK,
 } KutEmptyInstructionName;
 
 typedef enum KutRegisterInstructionName {
@@ -82,14 +90,14 @@ enum KutSpecialRegister {
 union KutInstruction {
     struct KutRegisterInstruction {
         uint8_t instruction;
-        uint8_t reg0;
-        uint8_t reg1;
-        uint8_t reg2;
+        int8_t reg0;
+        int8_t reg1;
+        int8_t reg2;
     } r;
 
     struct KutLiteralInstruction {
         uint8_t instruction;
-        uint8_t reg;
+        int8_t reg;
         uint16_t literal;
     } l;
 };
@@ -102,28 +110,30 @@ KutValue kutfunc_run(KutValue* self, KutTable* args);
 KutValue kutfunc_debug(KutValue* _self);
 
 KutInstruction kutfunc_emptyInstruction(KutEmptyInstructionName name);
-KutInstruction kutfunc_registerInstruction(KutRegisterInstructionName name, uint8_t reg0, uint8_t reg1, uint8_t reg2);
-KutInstruction kutfunc_literalInstruction(KutLiteralInstructionName name, uint8_t reg, uint16_t literal);
+KutInstruction kutfunc_registerInstruction(KutRegisterInstructionName name, int8_t reg0, int8_t reg1, int8_t reg2);
+KutInstruction kutfunc_literalInstruction(KutLiteralInstructionName name, int8_t reg, uint16_t literal);
 
 
 const char* kutfunc_serializeInstruction(KutInstruction instruction);
+void kutfunc_debugInstruction(KutInstruction instruction);
 
 KutInstruction kutfunc_noperation(void);
-KutInstruction kutfunc_methodcall(uint8_t return_position, uint8_t self, uint8_t message);
-KutInstruction kutfunc_returncall(uint8_t returned_value);
-KutInstruction kutfunc_pushvalue1(uint8_t value);
-KutInstruction kutfunc_pushvalue2(uint8_t value1, uint8_t value2);
-KutInstruction kutfunc_pushvalue3(uint8_t value1, uint8_t value2, uint8_t value3);
-KutInstruction kutfunc_mvregister(uint8_t destination, uint8_t source);
-KutInstruction kutfunc_swapregist(uint8_t reg1, uint8_t reg2);
-KutInstruction kutfunc_branchwith(uint8_t condition, uint8_t ifthen, uint8_t otherwise);
-KutInstruction kutfunc_getliteral(uint8_t reg, uint16_t literal);
-KutInstruction kutfunc_getclosure(uint8_t reg, uint16_t literal);
-KutInstruction kutfunc_setclosure(uint8_t reg, uint16_t literal);
-KutInstruction kutfunc_gettmplate(uint8_t reg, uint16_t literal);
-KutInstruction kutfunc_load16litr(uint8_t reg, uint16_t literal);
-KutInstruction kutfunc_loadnilval(uint8_t reg);
-KutInstruction kutfunc_loadundefn(uint8_t reg);
+KutInstruction kutfunc_newcllstak(void);
+KutInstruction kutfunc_methodcall(int8_t return_position, int8_t self, int8_t message);
+KutInstruction kutfunc_returncall(int8_t returned_value);
+KutInstruction kutfunc_pushvalue1(int8_t value);
+KutInstruction kutfunc_pushvalue2(int8_t value1, int8_t value2);
+KutInstruction kutfunc_pushvalue3(int8_t value1, int8_t value2, int8_t value3);
+KutInstruction kutfunc_mvregister(int8_t destination, int8_t source);
+KutInstruction kutfunc_swapregist(int8_t reg1, int8_t reg2);
+KutInstruction kutfunc_branchwith(int8_t condition, int8_t ifthen, int8_t otherwise);
+KutInstruction kutfunc_getliteral(int8_t reg, uint16_t literal);
+KutInstruction kutfunc_getclosure(int8_t reg, uint16_t literal);
+KutInstruction kutfunc_setclosure(int8_t reg, uint16_t literal);
+KutInstruction kutfunc_gettmplate(int8_t reg, uint16_t literal);
+KutInstruction kutfunc_load16litr(int8_t reg, uint16_t literal);
+KutInstruction kutfunc_loadnilval(int8_t reg);
+KutInstruction kutfunc_loadundefn(int8_t reg);
 
 #define kutfunc_templateLiteral(_instructions, _literals, _register_count, _infos, ...) \
     (const KutFuncTemplate*)(const struct {const KutInstruction* instructions; const KutValue* literals; const KutFuncTemplate** function_templates; size_t register_count, capture_count; uint16_t captures[sizeof((uint16_t[]){_infos, ##__VA_ARGS__})/sizeof(uint16_t)];}[])\

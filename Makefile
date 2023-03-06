@@ -13,6 +13,7 @@ CURDIRSRCS = $(wildcard ./*.$(SRC_EXTENSION))
 SRCS = $(wildcard $(SRCDIR)/*.$(SRC_EXTENSION))
 CURDIROBJS = $(patsubst $(SRCDIR)/%.$(SRC_EXTENSION), $(OBJDIR)/%.$(OBJ_EXTENSION), $(CURDIRSRCS))
 OBJS = $(patsubst $(SRCDIR)/%.$(SRC_EXTENSION), $(OBJDIR)/%.$(OBJ_EXTENSION), $(SRCS))
+CURDIRDEPENDS = $(patsubst ./%.$(SRC_EXTENSION),%.d,$(CURDIRSRCS))
 DEPENDS = $(patsubst $(SRCDIR)/%.$(SRC_EXTENSION),%.d,$(SRCS))
 HEADERS = $(wildcard $(INCDIR)/*.h)
 GPERFFILES = $(wildcard $(SRCDIR)/*.gperf)
@@ -25,6 +26,7 @@ EXECNAME=main
 ARGS=
 
 run: $(METHODFILES) build
+	@echo $(CURDIRDEPENDS)
 	@echo EX $(RUNNER) $(BINDIR)/$(EXECNAME) $(ARGS)
 	@echo ================
 	@$(RUNNER) ./$(BINDIR)/$(EXECNAME) $(ARGS)
@@ -49,12 +51,17 @@ clean:
 .PHONY: clean
 
 -include $(DEPENDS)
+-include $(CURDIRDEPENDS)
 
 $(SRCDIR)/%.methods: $(SRCDIR)/%.gperf
 	@echo GPERF $<
 	@gperf $< --output-file $@
 
 $(OBJDIR)/%.$(OBJ_EXTENSION): $(SRCDIR)/%.$(SRC_EXTENSION)
+	@$(COMPILER) $(CFLAGS) -MMD -MP -MF $(patsubst %.$(SRC_EXTENSION),%.d,$<) -c $< -o $@
+	@echo CC $<
+
+$(OBJDIR)/%.$(OBJ_EXTENSION): ./%.$(SRC_EXTENSION)
 	@$(COMPILER) $(CFLAGS) -MMD -MP -MF $(patsubst %.$(SRC_EXTENSION),%.d,$<) -c $< -o $@
 	@echo CC $<
 

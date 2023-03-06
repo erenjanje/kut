@@ -3,22 +3,27 @@
 #include <ctype.h>
 #include <iso646.h>
 #include <stdlib.h>
+#include <string.h>
 
-static const KutToken invalid_token = {.type = KTOK_INVALID};
-static const KutToken statement_end_token = {.type = KTOK_END_STATEMENT, .length = 1};
+const KutToken invalid_token = {.type = KUTTOKEN_INVALID};
+const KutToken start_token = {.type = KUTTOKEN_START};
+const KutToken end_token = {.type = KUTTOKEN_END};
+const KutToken statement_end_token = {.type = KUTTOKEN_END_STATEMENT, .length = 1};
 static const char* const token_typename_table[] = {
-    [KTOK_INVALID] = "KTOK_INVALID",
-    [KTOK_IDENTIFIER] = "KTOK_IDENTIFIER",
-    [KTOK_NUMBER] = "KTOK_NUMBER",
-    [KTOK_STRING] = "KTOK_STRING",
-    [KTOK_ARGUMENT_SEPEARTOR] = "KTOK_ARGUMENT_SEPEARTOR",
-    [KTOK_END_STATEMENT] = "KTOK_END_STATEMENT",
-    [KTOK_START_EXPRESSION] = "KTOK_START_EXPRESSION",
-    [KTOK_END_EXPRESSION] = "KTOK_END_EXPRESSION",
-    [KTOK_START_TABLE] = "KTOK_START_TABLE",
-    [KTOK_END_TABLE] = "KTOK_END_TABLE",
-    [KTOK_START_FUNCTION] = "KTOK_START_FUNCTION",
-    [KTOK_END_FUNCTION] = "KTOK_END_FUNCTION",
+    [KUTTOKEN_INVALID] = "KUTTOKEN_INVALID",
+    [KUTTOKEN_IDENTIFIER] = "KUTTOKEN_IDENTIFIER",
+    [KUTTOKEN_NUMBER] = "KUTTOKEN_NUMBER",
+    [KUTTOKEN_STRING] = "KUTTOKEN_STRING",
+    [KUTTOKEN_ARGUMENT_SEPEARTOR] = "KUTTOKEN_ARGUMENT_SEPEARTOR",
+    [KUTTOKEN_END_STATEMENT] = "KUTTOKEN_END_STATEMENT",
+    [KUTTOKEN_START_EXPRESSION] = "KUTTOKEN_START_EXPRESSION",
+    [KUTTOKEN_END_EXPRESSION] = "KUTTOKEN_END_EXPRESSION",
+    [KUTTOKEN_START_TABLE] = "KUTTOKEN_START_TABLE",
+    [KUTTOKEN_END_TABLE] = "KUTTOKEN_END_TABLE",
+    [KUTTOKEN_START_FUNCTION] = "KUTTOKEN_START_FUNCTION",
+    [KUTTOKEN_END_FUNCTION] = "KUTTOKEN_END_FUNCTION",
+    [KUTTOKEN_START] = "KUTTOKEN_START",
+    [KUTTOKEN_END] = "KUTTOKEN_END",
 };
 
 static KutToken skip_line_comment(const char** _string, const char* endptr) {
@@ -59,7 +64,7 @@ static KutToken skip_block_comment(const char** _string, const char* endptr) {
 static KutToken skip_comment(const char** _string, const char* endptr) {
     const char* string = *_string;
     if(string >= endptr) {
-        return invalid_token;
+        return end_token;
     }
     if(string[1] == '[') {
         return skip_block_comment(_string, endptr);
@@ -73,10 +78,10 @@ static KutToken parse_number(const char** _string, const char* endptr) {
     const char* number_end = NULL;
     double ret = strtod(string, &number_end);
     if(number_end > endptr) {
-        return invalid_token;
+        return end_token;
     }
     *_string = number_end;
-    return (KutToken){.type = KTOK_NUMBER, .num = ret, .token = string, .length = number_end-string};
+    return (KutToken){.type = KUTTOKEN_NUMBER, .num = ret, .token = string, .length = number_end-string};
 }
 
 static KutToken parse_string(const char** _string, const char* endptr) {
@@ -86,14 +91,14 @@ static KutToken parse_string(const char** _string, const char* endptr) {
     while(string < endptr) {
         if(*string == '\"') {
             *_string = string+1;
-            return (KutToken){.type = KTOK_STRING, .token = start+1, .length = (string - start - 1)};
+            return (KutToken){.type = KUTTOKEN_STRING, .token = start+1, .length = (string - start - 1)};
         } else if(*string == '\\') {
             string += 2;
         } else {
             string += 1;
         }
     }
-    return invalid_token;
+    return end_token;
 }
 
 static KutToken parse_identifier(const char** _string, const char* endptr) {
@@ -101,16 +106,16 @@ static KutToken parse_identifier(const char** _string, const char* endptr) {
     const char* start = *_string;
     while(string != endptr) {
         if(isspace(*string) or *string == '(' or *string == ')' or *string == '[' or *string == ']' or *string == '{' or *string == '}' or *string == '\\') {
-            *_string = string;
-            return (KutToken){.type = KTOK_IDENTIFIER, .token = start, .length = string-start};
+            break;
         }
         string += 1;
     }
-    return invalid_token;
+    *_string = string;
+    return (KutToken){.type = KUTTOKEN_IDENTIFIER, .token = start, .length = string-start};
 }
 
 KutToken peek_token(const char* string, const char* endptr) {
-    
+    return next_token(&string, endptr);
 }
 
 KutToken next_token(const char** _string, const char* endptr) {
@@ -123,7 +128,7 @@ KutToken next_token(const char** _string, const char* endptr) {
         string += 1;
     }
     if(string == endptr) {
-        ret = invalid_token;
+        ret = end_token;
         return ret;
     }
     if(*string == '#') { // Comment start
@@ -134,25 +139,25 @@ KutToken next_token(const char** _string, const char* endptr) {
     } else if(((*string == '+' or *string == '-') and (string+1) != endptr and isdigit(string[1])) or isdigit(*string)) { // Number
         ret = parse_number(&string, endptr);
     } else if(*string == '(') {
-        ret =  (KutToken){.type = KTOK_START_EXPRESSION, .token = string, .length = 1};
+        ret =  (KutToken){.type = KUTTOKEN_START_EXPRESSION, .token = string, .length = 1};
         string += 1;
     } else if(*string == ')') {
-        ret = (KutToken){.type = KTOK_END_EXPRESSION, .token = string, .length = 1};
+        ret = (KutToken){.type = KUTTOKEN_END_EXPRESSION, .token = string, .length = 1};
         string += 1;
     } else if(*string == '[') {
-        ret = (KutToken){.type = KTOK_START_TABLE, .token = string, .length = 1};
+        ret = (KutToken){.type = KUTTOKEN_START_TABLE, .token = string, .length = 1};
         string += 1;
     } else if(*string == ']') {
-        ret = (KutToken){.type = KTOK_END_TABLE, .token = string, .length = 1};
+        ret = (KutToken){.type = KUTTOKEN_END_TABLE, .token = string, .length = 1};
         string += 1;
     } else if(*string == '{') {
-        ret = (KutToken){.type = KTOK_START_FUNCTION, .token = string, .length = 1};
+        ret = (KutToken){.type = KUTTOKEN_START_FUNCTION, .token = string, .length = 1};
         string += 1;
     } else if(*string == '}') {
-        ret = (KutToken){.type = KTOK_END_FUNCTION, .token = string, .length = 1};
+        ret = (KutToken){.type = KUTTOKEN_END_FUNCTION, .token = string, .length = 1};
         string += 1;
     } else if(*string == '|') {
-        ret = (KutToken){.type = KTOK_ARGUMENT_SEPEARTOR, .token = string, .length = 1};
+        ret = (KutToken){.type = KUTTOKEN_ARGUMENT_SEPEARTOR, .token = string, .length = 1};
         string += 1;
     } else if(*string == '\"') {
         ret = parse_string(&string, endptr);
@@ -168,25 +173,30 @@ KutToken next_token(const char** _string, const char* endptr) {
 void debug_token(KutToken tok) {
     printf("[%s]", token_typename_table[tok.type]);
     switch(tok.type) {
-        case KTOK_INVALID:
+        case KUTTOKEN_INVALID:
             break;
-        case KTOK_IDENTIFIER:
-        case KTOK_NUMBER:
+        case KUTTOKEN_IDENTIFIER:
+        case KUTTOKEN_NUMBER:
             printf("%.*s", (int)tok.length, tok.token);
             break;
-        case KTOK_STRING:
+        case KUTTOKEN_STRING:
             printf("\"%.*s\"", (int)tok.length, tok.token);
             break;
-        case KTOK_ARGUMENT_SEPEARTOR:
-        case KTOK_END_STATEMENT:
-        case KTOK_START_EXPRESSION:
-        case KTOK_END_EXPRESSION:
-        case KTOK_START_TABLE:
-        case KTOK_END_TABLE:
-        case KTOK_START_FUNCTION:
-        case KTOK_END_FUNCTION:
-        case KTOK_START:
+        case KUTTOKEN_ARGUMENT_SEPEARTOR:
+        case KUTTOKEN_END_STATEMENT:
+        case KUTTOKEN_START_EXPRESSION:
+        case KUTTOKEN_END_EXPRESSION:
+        case KUTTOKEN_START_TABLE:
+        case KUTTOKEN_END_TABLE:
+        case KUTTOKEN_START_FUNCTION:
+        case KUTTOKEN_END_FUNCTION:
+        case KUTTOKEN_START:
             break;
     }
     printf("\n");
+}
+
+int token_compare(KutToken token, size_t len, const char* str) {
+    size_t minlen = token.length < len ? token.length : len;
+    return memcmp(token.token, str, minlen);
 }
