@@ -212,17 +212,10 @@ static void kutast__debug(KutASTNode node, size_t depth, const char* indent) {
             }
         break;
         case KUTAST_FUNCTION:
-            printf("FUNCTION{\n");
-            for(size_t i = 0; i < depth-1; i++) {
-                printf("%s", indent);
-            }
+            printf("FUNCTION{");
             for(size_t i = 0; i < node.argument_count; i++) {
-                kutast__debug(node.arguments[i], depth+2, indent);
+                printf("%.*s%s", (int)node.arguments[i].token.length, node.arguments[i].token.token, i == node.argument_count-1 ? "}\n" : " ");
             }
-            for(size_t i = 0; i < depth; i++) {
-                printf("%s", indent);
-            }
-            printf("}\n");
             for(size_t i = 0; i < node.children_count; i++) {
                 kutast__debug(node.children[i], depth+1, indent);
             }

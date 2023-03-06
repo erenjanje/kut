@@ -127,7 +127,7 @@ KutToken next_token(const char** _string, const char* endptr) {
         }
         string += 1;
     }
-    if(string == endptr) {
+    if(string >= endptr) {
         ret = end_token;
         return ret;
     }

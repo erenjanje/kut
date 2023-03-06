@@ -83,16 +83,18 @@ void test_parser() {
 }
 
 void test_compiler() {
-    const char* zort =
-        "ekran degiskeni 5 olsun\n"
-        "ekran (5 (3 2 *) +) {x y | x y +} yazsin\n";
-    const char* endptr = zort+strlen(zort);
-    KutASTNode nod = kutast_newStatement(&zort, endptr);
-    kutast_debug(nod, "   ");
+    const char zort[] =
+        "liste degiskeni [1 2 3 4] olsun\n"
+        "liste {x | x 2 ^}:ile esle";
+    const char* bort = zort;
+    const char* endptr = zort+sizeof(zort);
+    KutASTNode nod = kutast_newStatement(&bort, endptr);
+    kutast_debug(nod, "|   ");
     kutast_destroy(nod);
-    nod = kutast_newStatement(&zort, endptr);
-    kutast_debug(nod, "   ");
+    nod = kutast_newStatement(&bort, endptr);
+    kutast_debug(nod, "|   ");
     kutast_destroy(nod);
+    debug_token(next_token(&bort, endptr));
 }
 
 int main() {    
