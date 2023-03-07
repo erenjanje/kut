@@ -36,6 +36,9 @@ static KutASTNode kutast__new(const char** _string, const char* endptr, const Ku
             case KUTTOKEN_END_FUNCTION:
             case KUTTOKEN_END_TABLE:
                 ret.children[ret.children_count].type = KUTAST_INVALID;
+                ret.children_count += 1;
+                ret.type = KUTAST_INVALID;
+                goto end;
             break;
 
             case KUTTOKEN_START_EXPRESSION:
@@ -68,6 +71,21 @@ KutASTNode kutast_newExpression(const char** _string, const char* endptr) {
 
 KutASTNode kutast_newTable(const char** _string, const char* endptr) {
     return kutast__new(_string, endptr, KUTAST_TABLE, KUTTOKEN_END_TABLE);
+}
+
+void kutast_parseMultiLineFunction(const char** _string, const char* endptr, KutASTNode* func) {
+    const char* string = *_string;
+    KutASTNode statement = (KutASTNode){.type = KUTAST_NUMBER_LITERAL}; // Everything except invalid
+
+    while((statement = kutast_newStatement(&string, endptr)).type != KUTAST_INVALID) {
+        func->children = realloc(func->children, (func->children_count+1)*sizeof(func->children[func->children_count]));
+        func->children[func->children_count] = statement;
+        func->children_count += 1;
+    }
+
+    kutast_destroy(statement);
+
+    *_string = string;
 }
 
 KutASTNode kutast_newFunction(const char** _string, const char* endptr) {
@@ -104,6 +122,8 @@ KutASTNode kutast_newFunction(const char** _string, const char* endptr) {
             case KUTTOKEN_START_TABLE:
             case KUTTOKEN_START_FUNCTION:
                 ret.arguments[ret.argument_count].type = KUTAST_INVALID;
+                ret.argument_count += 1;
+                goto end;
             break;
         }
         ret.argument_count += 1;
@@ -135,10 +155,26 @@ next:
                 goto end;
             break;
 
-            case KUTTOKEN_END_STATEMENT:
+            case KUTTOKEN_END_STATEMENT: {
+                KutASTNode first_statement = (KutASTNode){
+                    .type = KUTAST_STATEMENT,
+                    .children_count = ret.children_count,
+                    .children = ret.children,
+                    .arguments = NULL,
+                    .argument_count = 0,
+                };
+                ret.children = calloc(1, sizeof(ret.children[0]));
+                ret.children[0] = first_statement;
+                ret.children_count = 1;
+                kutast_parseMultiLineFunction(&string, endptr, &ret);
+                goto end;
+            } break;
+
             case KUTTOKEN_END_EXPRESSION:
             case KUTTOKEN_END_TABLE:
                 ret.children[ret.children_count].type = KUTAST_INVALID;
+                ret.children_count += 1;
+                goto end;
             break;
 
             case KUTTOKEN_START_EXPRESSION:
