@@ -20,7 +20,7 @@ GPERFFILES = $(wildcard $(SRCDIR)/*.gperf)
 METHODFILES = $(patsubst $(SRCDIR)/%.gperf, $(SRCDIR)/%.methods, $(GPERFFILES))
 
 CFLAGS=-fsanitize=address -fsanitize=leak -I"./$(INCDIR)" -Wno-unused-parameter -Wno-ignored-attributes -fopenmp -flto -mavx2 -std=c99 -pedantic -Wall -Wextra -g
-LDFLAGS=$(CFLAGS) -fPIC -lm -O3 -fopenmp
+LDFLAGS=$(CFLAGS) -fPIC -lm -fopenmp
 
 EXECNAME=main
 ARGS=

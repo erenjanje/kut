@@ -35,64 +35,135 @@ struct KutFunc {
 };
 
 enum KutInstructionName {
-    __KI_NOPERATION,
-    __KI_NEWCLLSTAK,
+    /// @brief No operation, empty instruction
+    KUTINSTRUCTION_NO_OPERATION,
+    
+    /// @brief Methodcall, return value is ignored, `self` is given register
+    KUTINSTRUCTION_METHODCALL_IR,
 
-    __KI_METHODCALL,
-    __KI_RETURNCALL,
-    __KI_PUSHVALUE1,
-    __KI_PUSHVALUE2,
-    __KI_PUSHVALUE3,
-    __KI_MVREGISTER,
-    __KI_SWAPREGIST,
-    __KI_BRANCHWITH,
+    /// @brief Methodcall, return value is ignored, `self` is given in the call stack
+    KUTINSTRUCTION_METHODCALL_IC,
+    
+    /// @brief Pushes 2 registers to the call stack
+    KUTINSTRUCTION_PUSH_REGISTER_2,
+    
+    /// @brief Pushes 3 registers to the call stack
+    KUTINSTRUCTION_PUSH_REGISTER_3,
 
-    __KI_GETLITERAL,
-    __KI_GETCLOSURE,
-    __KI_SETCLOSURE,
-    __KI_GETTMPLATE,
-    __KI_LOAD16LITR,
-    __KI_LOADNILVAL,
-    __KI_LOADUNDEFN,
-};
+    /// @brief Creates a new call stack for the next method call
+    KUTINSTRUCTION_CREATE_CALLSTACK,
 
-typedef enum KutEmptyInstructionName {
-    KI_NOPERATION = __KI_NOPERATION,
-    KI_NEWCLLSTAK = __KI_NEWCLLSTAK,
-} KutEmptyInstructionName;
 
-typedef enum KutRegisterInstructionName {
-    KI_METHODCALL = __KI_METHODCALL,
-    KI_RETURNCALL = __KI_RETURNCALL,
-    KI_PUSHVALUE1 = __KI_PUSHVALUE1,
-    KI_PUSHVALUE2 = __KI_PUSHVALUE2,
-    KI_PUSHVALUE3 = __KI_PUSHVALUE3,
-    KI_MVREGISTER = __KI_MVREGISTER,
-    KI_SWAPREGIST = __KI_SWAPREGIST,
-    KI_BRANCHWITH = __KI_BRANCHWITH,
-} KutRegisterInstructionName;
 
-typedef enum KutLiteralInstructionName {
-    KI_GETLITERAL = __KI_GETLITERAL,
-    KI_GETCLOSURE = __KI_GETCLOSURE,
-    KI_SETCLOSURE = __KI_SETCLOSURE,
-    KI_GETTMPLATE = __KI_GETTMPLATE,
-    KI_LOAD16LITR = __KI_LOAD16LITR,
-    KI_LOADNILVAL = __KI_LOADNILVAL,
-    KI_LOADUNDEFN = __KI_LOADUNDEFN,
-} KutLiteralInstructionName;
+    /// @brief Symbolic instruction
+    KUTINSTRUCTION_REGISTER_START,
 
-enum KutSpecialRegister {
-    KSP_RET,
-    KSP_ZR0,
+    /// @brief Assigns the second register `src`s value to the first register `dest`
+    KUTINSTRUCTION_ASSIGN_REGISTER,
+    
+    /// @brief Methodcall, return value is given to the register, `self` is given register
+    KUTINSTRUCTION_METHODCALL_RR,
+    
+    /// @brief Methodcall, return value is given to the register, `self` is given in the call stack
+    KUTINSTRUCTION_METHODCALL_RC,
+    
+    /// @brief Loads the literal into the given register
+    KUTINSTRUCTION_LOAD_LITERAL,
+    
+    /// @brief Loads the closure's value into the given register
+    KUTINSTRUCTION_LOAD_CLOSURE,
+    
+    /// @brief Loads a new function from the template into the given register
+    KUTINSTRUCTION_LOAD_TEMPLATE,
+    
+    /// @brief Loads a 16-bit immediate integer to the given register
+    KUTINSTRUCTION_LOAD_INTEGER,
+    
+    /// @brief Loads nil into the given register
+    KUTINSTRUCTION_LOAD_NIL,
+    
+    /// @brief Loads nil into the given register
+    KUTINSTRUCTION_LOAD_UNDEFINED,
+    
+    /// @brief Loads the call stack as a table into the given register
+    KUTINSTRUCTION_LOAD_TABLE,
+
+
+
+    /// @brief Symbolic instruction
+    KUTINSTRUCTION_PUSH_START,
+
+    /// @brief Pushes 1 register to the call stack
+    KUTINSTRUCTION_PUSH_REGISTER_1,
+
+    /// @brief Methodcall, return value is directly pushed to the previous call stack, `self` is given register
+    KUTINSTRUCTION_METHODCALL_PR,
+
+    /// @brief Methodcall, return value is directly pushed to the previous call stack, `self` is given in the call stack
+    KUTINSTRUCTION_METHODCALL_PC,
+
+    /// @brief Pushes the literal directly to the call stack
+    KUTINSTRUCTION_PUSH_LITERAL,
+
+    /// @brief Pushes the closure's value directly to the call stack
+    KUTINSTRUCTION_PUSH_CLOSURE,
+
+    /// @brief Pushes new function from the template directly to the call stack
+    KUTINSTRUCTION_PUSH_TEMPLATE,
+
+    /// @brief Pushes a 16-bit immediate integer directly to the call stack
+    KUTINSTRUCTION_PUSH_INTEGER,
+
+    /// @brief Pushes nil directly to the call stack
+    KUTINSTRUCTION_PUSH_NIL,
+
+    /// @brief Pushes undefined directly to the call stack
+    KUTINSTRUCTION_PUSH_UNDEFINED,
+
+    /// @brief Pushes the call stack as a table directly to the previous call stack
+    KUTINSTRUCTION_PUSH_TABLE,
+
+
+    /// @brief Symbolic instruction
+    KUTINSTRUCTION_CLOSURE_START,
+
+    /// @brief Pops the call stack to the closure (impossible, cannot pop from call stack)
+    KUTINSTRUCTION_POP_CLOSURE,
+
+    /// @brief Methodcall, return value is sent to the closure, `self` is given register
+    KUTINSTRUCTION_METHODCALL_CR,
+
+    /// @brief Methodcall, return value is sent to the closure, `self` is given in the call stack
+    KUTINSTRUCTION_METHODCALL_CC,
+
+    /// @brief Sets the closure to the literal (impossible)
+    KUTINSTRUCTION_SETCLOSURE_LITERAL,
+
+    /// @brief Assigns the value of a closure to another closure (impossible)
+    KUTINSTRUCTION_SETCLOSURE_CLOSURE,
+
+    /// @brief Sets the closure to a function from the given template (impossible)
+    KUTINSTRUCTION_SETCLOSURE_TEMPLATE,
+
+    /// @brief Sets the closure to an 8-bit immediate integer
+    KUTINSTRUCTION_SETCLOSURE_INTEGER,
+
+    /// @brief Sets the closure to nil
+    KUTINSTRUCTION_SETCLOSURE_NIL,
+
+    /// @brief Sets the closure to undefined
+    KUTINSTRUCTION_SETCLOSURE_UNDEFINED,
+
+    /// @brief Sets the closure to the call stack
+    KUTINSTRUCTION_SETCLOSURE_TABLE,
 };
 
 union KutInstruction {
     struct KutRegisterInstruction {
         uint8_t instruction;
-        int8_t reg0;
-        int8_t reg1;
-        int8_t reg2;
+        uint8_t reg0;
+        uint8_t reg1;
+        uint8_t reg2;
     } r;
 
     struct KutLiteralInstruction {
@@ -109,31 +180,50 @@ KutFunc* kutfunc_cast(KutValue val);
 KutValue kutfunc_run(KutValue* self, KutTable* args);
 KutValue kutfunc_debug(KutValue* _self);
 
-KutInstruction kutfunc_emptyInstruction(KutEmptyInstructionName name);
-KutInstruction kutfunc_registerInstruction(KutRegisterInstructionName name, int8_t reg0, int8_t reg1, int8_t reg2);
-KutInstruction kutfunc_literalInstruction(KutLiteralInstructionName name, int8_t reg, uint16_t literal);
-
-
 const char* kutfunc_serializeInstruction(KutInstruction instruction);
 void kutfunc_debugInstruction(KutInstruction instruction);
 
-KutInstruction kutfunc_noperation(void);
-KutInstruction kutfunc_newcllstak(void);
-KutInstruction kutfunc_methodcall(int8_t return_position, int8_t self, int8_t message);
-KutInstruction kutfunc_returncall(int8_t returned_value);
-KutInstruction kutfunc_pushvalue1(int8_t value);
-KutInstruction kutfunc_pushvalue2(int8_t value1, int8_t value2);
-KutInstruction kutfunc_pushvalue3(int8_t value1, int8_t value2, int8_t value3);
-KutInstruction kutfunc_mvregister(int8_t destination, int8_t source);
-KutInstruction kutfunc_swapregist(int8_t reg1, int8_t reg2);
-KutInstruction kutfunc_branchwith(int8_t condition, int8_t ifthen, int8_t otherwise);
-KutInstruction kutfunc_getliteral(int8_t reg, uint16_t literal);
-KutInstruction kutfunc_getclosure(int8_t reg, uint16_t literal);
-KutInstruction kutfunc_setclosure(int8_t reg, uint16_t literal);
-KutInstruction kutfunc_gettmplate(int8_t reg, uint16_t literal);
-KutInstruction kutfunc_load16litr(int8_t reg, uint16_t literal);
-KutInstruction kutfunc_loadnilval(int8_t reg);
-KutInstruction kutfunc_loadundefn(int8_t reg);
+KutInstruction kutinstruction_noOperation(void);
+KutInstruction kutinstruction_methodcallIR(uint8_t reg);
+KutInstruction kutinstruction_methodcallIC(void);
+KutInstruction kutinstruction_pushRegister2(uint8_t reg1, uint8_t reg2);
+KutInstruction kutinstruction_pushRegister3(uint8_t reg1, uint8_t reg2, uint8_t reg3);
+KutInstruction kutinstruction_createCallstack(void);
+
+// Result is assigned to a register
+
+KutInstruction kutinstruction_assignRegister(uint8_t src, uint8_t dest);
+KutInstruction kutinstruction_methodcallRR(uint8_t self, uint8_t ret);
+KutInstruction kutinstruction_methodcallRC(uint8_t ret);
+KutInstruction kutinstruction_loadLiteral(uint8_t reg, uint16_t literal);
+KutInstruction kutinstruction_loadClosure(uint8_t reg, uint16_t closure);
+KutInstruction kutinstruction_loadTemplate(uint8_t reg, uint16_t template);
+KutInstruction kutinstruction_loadInteger(uint8_t reg, uint16_t integer);
+KutInstruction kutinstruction_loadNil(uint8_t reg);
+KutInstruction kutinstruction_loadUndefined(uint8_t reg);
+KutInstruction kutinstruction_loadTable(uint8_t reg);
+
+// Result is directly pushed to the call stack
+
+KutInstruction kutinstruction_pushRegister1(uint8_t reg);
+KutInstruction kutinstruction_methodcallPR(uint8_t self);
+KutInstruction kutinstruction_methodcallPC(void);
+KutInstruction kutinstruction_pushLiteral(uint16_t literal);
+KutInstruction kutinstruction_pushClosure(uint16_t closure);
+KutInstruction kutinstruction_pushTemplate(uint16_t template);
+KutInstruction kutinstruction_pushInteger(uint16_t integer);
+KutInstruction kutinstruction_pushNil(void);
+KutInstruction kutinstruction_pushUndefined(void);
+KutInstruction kutinstruction_pushTable(void);
+
+// Result is assigned to a closure
+
+KutInstruction kutinstruction_methodcallCR(uint16_t self, uint8_t ret);
+KutInstruction kutinstruction_methodcallCC(uint16_t self);
+KutInstruction kutinstruction_setclosureInteger(uint16_t closure, uint8_t integer);
+KutInstruction kutinstruction_setclosureNil(uint16_t closure);
+KutInstruction kutinstruction_setclosureUndefined(uint16_t closure);
+KutInstruction kutinstruction_setclosureTable(uint16_t closure);
 
 #define kutfunc_templateLiteral(_instructions, _literals, _register_count, _infos, ...) \
     (const KutFuncTemplate*)(const struct {const KutInstruction* instructions; const KutValue* literals; const KutFuncTemplate** function_templates; size_t register_count, capture_count; uint16_t captures[sizeof((uint16_t[]){_infos, ##__VA_ARGS__})/sizeof(uint16_t)];}[])\
