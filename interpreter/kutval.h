@@ -48,6 +48,7 @@ extern const KutMandatoryMethodsTable kutreference_methods;
 extern const KutMandatoryMethodsTable kutstring_methods;
 extern const KutMandatoryMethodsTable kutfunc_methods;
 extern const KutMandatoryMethodsTable kuttable_methods;
+extern const KutMandatoryMethodsTable kuterror_methods;
 
 extern KutTable* const empty_table;
 
