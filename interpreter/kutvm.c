@@ -36,141 +36,117 @@ static void kutvm_setRegister(KutFunc* func, size_t reg, KutValue val) {
     setter->reference_count = ref;
 }
 
-bool kutvm_noperation(KutFunc* func, KutInstruction instruction) {
+bool kutvm_noOperation(KutFunc* func, KutInstruction instruction) {
     return false;
 }
-
-bool kutvm_methodcall(KutFunc* func, KutInstruction instruction) {
-    size_t return_position = instruction.r.reg0;
-    size_t self = instruction.r.reg1;
-    size_t msg = instruction.r.reg2;
-    KutString* message = kutstring_cast(kutvm_getRegister(func, msg));
-    if(message == NULL) {
-        fprintf(stderr, "Message should be a string!\n");
-        return false;
-    }
-    KutValue* selfptr = kutvm_getRegisterPointer(func, self);
-    KutValue ret = selfptr->methods->dispatch(selfptr, message)(selfptr, func->call_stack);
-    KutValue* retptr = kutvm_getRegisterPointer(func, return_position);
-    kut_set(retptr, &ret);
-    kut_decref(&ret);
-    KutValue call_stack = kuttable_wrap(func->call_stack);
-    kuttable_clear(&call_stack, empty_table);
+bool kutvm_methodcallIR(KutFunc* func, KutInstruction instruction);
+bool kutvm_methodcallIC(KutFunc* func, KutInstruction instruction);
+bool kutvm_pushRegister2(KutFunc* func, KutInstruction instruction) {
+    KutValue tmp = kuttable_wrap(func->call_stack[func->current_call_stack]);
+    kuttable_append(&tmp, kuttable_literal(kutvm_getRegister(func, instruction.r.reg0), kutvm_getRegister(func, instruction.r.reg1)));
     return false;
 }
-
-bool kutvm_returncall(KutFunc* func, KutInstruction instruction) {
-    kut_set(&func->ret, kutvm_getRegisterPointer(func, instruction.r.reg0));
-    return true;
-}
-
-bool kutvm_pushvalue1(KutFunc* func, KutInstruction instruction) {
-    __kuttable_append(func->call_stack, kutvm_getRegister(func, instruction.r.reg0));
+bool kutvm_pushRegister3(KutFunc* func, KutInstruction instruction) {
+    KutValue tmp = kuttable_wrap(func->call_stack[func->current_call_stack]);
+    kuttable_append(&tmp, kuttable_literal(kutvm_getRegister(func, instruction.r.reg0), kutvm_getRegister(func, instruction.r.reg1), kutvm_getRegister(func, instruction.r.reg2)));
     return false;
 }
-
-bool kutvm_pushvalue2(KutFunc* func, KutInstruction instruction) {
-    __kuttable_append(func->call_stack, kutvm_getRegister(func, instruction.r.reg0));
-    __kuttable_append(func->call_stack, kutvm_getRegister(func, instruction.r.reg1));
+bool kutvm_createCallstack(KutFunc* func, KutInstruction instruction) {
+    func->current_call_stack += 1;
     return false;
 }
-
-bool kutvm_pushvalue3(KutFunc* func, KutInstruction instruction) {
-    __kuttable_append(func->call_stack, kutvm_getRegister(func, instruction.r.reg0));
-    __kuttable_append(func->call_stack, kutvm_getRegister(func, instruction.r.reg1));
-    __kuttable_append(func->call_stack, kutvm_getRegister(func, instruction.r.reg2));
-    return false;
-}
-
-bool kutvm_getliteral(KutFunc* func, KutInstruction instruction) {
-    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &func->literals[instruction.l.literal]);
-    return false;
-}
-
-bool kutvm_getclosure(KutFunc* func, KutInstruction instruction) {
-    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), kutreference_cast(func->captures[instruction.l.literal]));
-    return false;
-}
-
-bool kutvm_setclosure(KutFunc* func, KutInstruction instruction) {
-    kut_set(kutreference_cast(func->captures[instruction.l.literal]), kutvm_getRegisterPointer(func, instruction.l.reg));
-    return false;
-}
-
-bool kutvm_load16litr(KutFunc* func, KutInstruction instruction) {
-    KutValue val = kutnumber_wrap((int16_t)instruction.l.literal);
-    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &val);
-    return false;
-}
-
-bool kutvm_loadnilval(KutFunc* func, KutInstruction instruction) {
-    KutValue val = kut_nil;
-    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &val);
-    return false;
-}
-
-bool kutvm_loadundefn(KutFunc* func, KutInstruction instruction) {
-    KutValue val = kut_undefined;
-    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &val);
-    return false;
-}
-
-bool kutvm_mvregister(KutFunc* func, KutInstruction instruction) {
+bool kutvm_assignRegister(KutFunc* func, KutInstruction instruction) {
     kut_set(kutvm_getRegisterPointer(func, instruction.r.reg0), kutvm_getRegisterPointer(func, instruction.r.reg1));
     return false;
 }
-
-bool kutvm_swapregist(KutFunc* func, KutInstruction instruction) {
-    kut_swap(kutvm_getRegisterPointer(func, instruction.r.reg0), kutvm_getRegisterPointer(func, instruction.r.reg1));
+bool kutvm_methodcallRR(KutFunc* func, KutInstruction instruction);
+bool kutvm_methodcallRC(KutFunc* func, KutInstruction instruction);
+bool kutvm_loadLiteral(KutFunc* func, KutInstruction instruction) {
+    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &func->literals[instruction.l.literal]);
     return false;
 }
-
-bool kutvm_branchwith(KutFunc* func, KutInstruction instruction) {
-    bool condition = kutboolean_cast(kutvm_getRegister(func, instruction.r.reg0));
-    if(condition) {
-        KutFunc* called = kutfunc_cast(kutvm_getRegister(func, instruction.r.reg1));
-        KutValue tmp = kutfunc_wrap(called);
-        if(called) {
-            kutfunc_run(&tmp, empty_table);
-        } else {
-            fprintf(stderr, "Branch should be a function!\n");
-        }
-    } else {
-        KutFunc* called = kutfunc_cast(kutvm_getRegister(func, instruction.r.reg2));
-        KutValue tmp = kutfunc_wrap(called);
-        if(called) {
-            kutfunc_run(&tmp, empty_table);
-        } else {
-            fprintf(stderr, "Branch should be a function!\n");
-        }
-    }
+bool kutvm_loadClosure(KutFunc* func, KutInstruction instruction) {
+    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), kutreference_cast(func->captures[instruction.l.literal]));
     return false;
 }
-
-bool kutvm_gettmplate(KutFunc* func, KutInstruction instruction) {
-    kut_decref(&func->registers[instruction.l.reg]);
-    const KutFuncTemplate* template = func->function_templates[instruction.l.literal];
-    KutValue f = kutfunc_wrap(kutfunc_new(func, template));
-    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &f);
-    kut_decref(&f);
+bool kutvm_loadTemplate(KutFunc* func, KutInstruction instruction) {
+    KutValue tmp = kutfunc_wrap(kutfunc_new(func, func->function_templates[instruction.l.literal]));
+    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &tmp);
+    kut_decref(&tmp);
     return false;
 }
+bool kutvm_loadInteger(KutFunc* func, KutInstruction instruction) {
+    KutValue tmp = kutnumber_wrap(instruction.l.literal);
+    kut_set(kutvm_getRegisterPointer(func, instruction.r.reg), &tmp);
+    return false;
+}
+bool kutvm_loadNil(KutFunc* func, KutInstruction instruction) {
+    KutValue tmp = kut_nil;
+    kut_set(kutvm_getRegisterPointer(func, instruction.r.reg), &tmp);
+    return false;
+}
+bool kutvm_loadUndefined(KutFunc* func, KutInstruction instruction) {
+    KutValue tmp = kut_undefined;
+    kut_set(kutvm_getRegisterPointer(func, instruction.r.reg), &tmp);
+    return false;
+}
+bool kutvm_loadTable(KutFunc* func, KutInstruction instruction);
+bool kutvm_pushRegister1(KutFunc* func, KutInstruction instruction);
+bool kutvm_methodcallPR(KutFunc* func, KutInstruction instruction);
+bool kutvm_methodcallPC(KutFunc* func, KutInstruction instruction);
+bool kutvm_pushLiteral(KutFunc* func, KutInstruction instruction);
+bool kutvm_pushClosure(KutFunc* func, KutInstruction instruction);
+bool kutvm_pushTemplate(KutFunc* func, KutInstruction instruction);
+bool kutvm_pushInteger(KutFunc* func, KutInstruction instruction);
+bool kutvm_pushNil(KutFunc* func, KutInstruction instruction);
+bool kutvm_pushUndefined(KutFunc* func, KutInstruction instruction);
+bool kutvm_pushTable(KutFunc* func, KutInstruction instruction);
+bool kutvm_popClosure(KutFunc* func, KutInstruction instruction);
+bool kutvm_methodcallCR(KutFunc* func, KutInstruction instruction);
+bool kutvm_methodcallCC(KutFunc* func, KutInstruction instruction);
+bool kutvm_setclosureLiteral(KutFunc* func, KutInstruction instruction);
+bool kutvm_setclosureClosure(KutFunc* func, KutInstruction instruction);
+bool kutvm_setclosureTemplate(KutFunc* func, KutInstruction instruction);
+bool kutvm_setclosureInteger(KutFunc* func, KutInstruction instruction);
+bool kutvm_setclosureNil(KutFunc* func, KutInstruction instruction);
+bool kutvm_setclosureUndefined(KutFunc* func, KutInstruction instruction);
+bool kutvm_setclosureTable(KutFunc* func, KutInstruction instruction);
 
 KutInstructionHandler instruction_handlers[] = {
-    [KI_NOPERATION] = kutvm_noperation,
-    [KI_METHODCALL] = kutvm_methodcall,
-    [KI_RETURNCALL] = kutvm_returncall,
-    [KI_PUSHVALUE1] = kutvm_pushvalue1,
-    [KI_PUSHVALUE2] = kutvm_pushvalue2,
-    [KI_PUSHVALUE3] = kutvm_pushvalue3,
-    [KI_MVREGISTER] = kutvm_mvregister,
-    [KI_SWAPREGIST] = kutvm_swapregist,
-    [KI_BRANCHWITH] = kutvm_branchwith,
-    [KI_GETLITERAL] = kutvm_getliteral,
-    [KI_GETCLOSURE] = kutvm_getclosure,
-    [KI_SETCLOSURE] = kutvm_setclosure,
-    [KI_GETTMPLATE] = kutvm_gettmplate,
-    [KI_LOAD16LITR] = kutvm_load16litr,
-    [KI_LOADNILVAL] = kutvm_loadnilval,
-    [KI_LOADUNDEFN] = kutvm_loadundefn,
+    [KUTINSTRUCTION_ASSIGN_REGISTER] = kutvm_assignRegister,
+    [KUTINSTRUCTION_CREATE_CALLSTACK] = kutvm_createCallstack,
+    [KUTINSTRUCTION_LOAD_CLOSURE] = kutvm_loadClosure,
+    [KUTINSTRUCTION_LOAD_INTEGER] = kutvm_loadInteger,
+    [KUTINSTRUCTION_LOAD_LITERAL] = kutvm_loadLiteral,
+    [KUTINSTRUCTION_LOAD_NIL] = kutvm_loadNil,
+    [KUTINSTRUCTION_LOAD_TABLE] = kutvm_loadTable,
+    [KUTINSTRUCTION_LOAD_TEMPLATE] = kutvm_loadTemplate,
+    [KUTINSTRUCTION_LOAD_UNDEFINED] = kutvm_loadUndefined,
+    [KUTINSTRUCTION_METHODCALL_CC] = kutvm_methodcallCC,
+    [KUTINSTRUCTION_METHODCALL_CR] = kutvm_methodcallCR,
+    [KUTINSTRUCTION_METHODCALL_IC] = kutvm_methodcallIC,
+    [KUTINSTRUCTION_METHODCALL_IR] = kutvm_methodcallIR,
+    [KUTINSTRUCTION_METHODCALL_PC] = kutvm_methodcallPC,
+    [KUTINSTRUCTION_METHODCALL_PR] = kutvm_methodcallPR,
+    [KUTINSTRUCTION_METHODCALL_RC] = kutvm_methodcallRC,
+    [KUTINSTRUCTION_METHODCALL_RR] = kutvm_methodcallRR,
+    [KUTINSTRUCTION_NO_OPERATION] = kutvm_noOperation,
+    [KUTINSTRUCTION_POP_CLOSURE] = kutvm_popClosure,
+    [KUTINSTRUCTION_PUSH_CLOSURE] = kutvm_pushClosure,
+    [KUTINSTRUCTION_PUSH_INTEGER] = kutvm_pushInteger,
+    [KUTINSTRUCTION_PUSH_LITERAL] = kutvm_pushLiteral,
+    [KUTINSTRUCTION_PUSH_NIL] = kutvm_pushNil,
+    [KUTINSTRUCTION_PUSH_REGISTER_1] = kutvm_pushRegister1,
+    [KUTINSTRUCTION_PUSH_REGISTER_2] = kutvm_pushRegister2,
+    [KUTINSTRUCTION_PUSH_REGISTER_3] = kutvm_pushRegister3,
+    [KUTINSTRUCTION_PUSH_TABLE] = kutvm_pushTable,
+    [KUTINSTRUCTION_PUSH_TEMPLATE] = kutvm_pushTemplate,
+    [KUTINSTRUCTION_PUSH_UNDEFINED] = kutvm_pushUndefined,
+    [KUTINSTRUCTION_SETCLOSURE_CLOSURE] = kutvm_setclosureClosure,
+    [KUTINSTRUCTION_SETCLOSURE_INTEGER] = kutvm_setclosureInteger,
+    [KUTINSTRUCTION_SETCLOSURE_LITERAL] = kutvm_setclosureLiteral,
+    [KUTINSTRUCTION_SETCLOSURE_NIL] = kutvm_setclosureNil,
+    [KUTINSTRUCTION_SETCLOSURE_TABLE] = kutvm_setclosureTable,
+    [KUTINSTRUCTION_SETCLOSURE_TEMPLATE] = kutvm_setclosureTemplate,
+    [KUTINSTRUCTION_SETCLOSURE_UNDEFINED] = kutvm_setclosureUndefined,
 };

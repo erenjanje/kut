@@ -27,7 +27,8 @@ struct KutFunc {
     size_t template_count;
     const KutFuncTemplate** function_templates;
     KutValue ret;
-    KutTable* call_stack;
+    size_t current_call_stack;
+    KutTable** call_stack;
     size_t capture_count;
     KutValue* captures;
     size_t register_count;
@@ -56,7 +57,7 @@ enum KutInstructionName {
 
 
     /// @brief Symbolic instruction
-    KUTINSTRUCTION_REGISTER_START,
+    KUTINSTRUCTION_REGISTER_START = KUTINSTRUCTION_CREATE_CALLSTACK,
 
     /// @brief Assigns the second register `src`s value to the first register `dest`
     KUTINSTRUCTION_ASSIGN_REGISTER,
@@ -91,7 +92,7 @@ enum KutInstructionName {
 
 
     /// @brief Symbolic instruction
-    KUTINSTRUCTION_PUSH_START,
+    KUTINSTRUCTION_PUSH_START = KUTINSTRUCTION_LOAD_TABLE,
 
     /// @brief Pushes 1 register to the call stack
     KUTINSTRUCTION_PUSH_REGISTER_1,
@@ -125,7 +126,7 @@ enum KutInstructionName {
 
 
     /// @brief Symbolic instruction
-    KUTINSTRUCTION_CLOSURE_START,
+    KUTINSTRUCTION_CLOSURE_START = KUTINSTRUCTION_PUSH_TABLE,
 
     /// @brief Pops the call stack to the closure (impossible, cannot pop from call stack)
     KUTINSTRUCTION_POP_CLOSURE,
@@ -218,7 +219,7 @@ KutInstruction kutinstruction_pushTable(void);
 
 // Result is assigned to a closure
 
-KutInstruction kutinstruction_methodcallCR(uint16_t self, uint8_t ret);
+KutInstruction kutinstruction_methodcallCR(uint16_t ret, uint8_t self);
 KutInstruction kutinstruction_methodcallCC(uint16_t self);
 KutInstruction kutinstruction_setclosureInteger(uint16_t closure, uint8_t integer);
 KutInstruction kutinstruction_setclosureNil(uint16_t closure);
