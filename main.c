@@ -6,6 +6,7 @@
 
 #include "kutparser.h"
 #include "kutast.h"
+#include "kutcompiler.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -85,16 +86,27 @@ void test_parser() {
 void test_compiler() {
     const char zort[] =
         "liste degiskeni [1 2 3 4] olsun\n"
-        "liste {x | x 2 ^}:ile esle\n"
+        "a degiskeni 5 olsun\n"
+        "b degiskeni 8 olsun\n"
+        "liste {x | liste {y | a y +\n"
+        "} zort\n"
+        "x 3 +\n}:ile esle\n"
         "ekran liste yazsin\n\n\n\n";
     const char* bort = zort;
     const char* endptr = zort+sizeof(zort);
     KutASTNode nod = {0};
+    KutCompilerInfo root_info = {
+        .closure_count = 0,
+        .context = NULL,
+        .register_count = 0,
+        .variables = NULL,
+    };
     while(bort != endptr) {
         nod = kutast_newStatement(&bort, endptr);
-        kutast_debug(nod, "|   ");
+        kutcompiler_compileStatement(nod, &root_info);
         kutast_destroy(nod);
     }
+    kutcompiler_destroyInfo(&root_info);
 }
 
 int main() {    

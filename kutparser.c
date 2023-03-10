@@ -197,6 +197,8 @@ void debug_token(KutToken tok) {
 }
 
 int token_compare(KutToken token, size_t len, const char* str) {
-    size_t minlen = token.length < len ? token.length : len;
-    return memcmp(token.token, str, minlen);
+    if(len != token.length) {
+        return (int)len - (int)token.length;
+    }
+    return memcmp(token.token, str, len);
 }

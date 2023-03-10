@@ -51,13 +51,9 @@ enum KutInstructionName {
     /// @brief Pushes 3 registers to the call stack
     KUTINSTRUCTION_PUSH_REGISTER_3,
 
-    /// @brief Creates a new call stack for the next method call
-    KUTINSTRUCTION_CREATE_CALLSTACK,
-
-
 
     /// @brief Symbolic instruction
-    KUTINSTRUCTION_REGISTER_START = KUTINSTRUCTION_CREATE_CALLSTACK,
+    KUTINSTRUCTION_REGISTER_START = KUTINSTRUCTION_PUSH_REGISTER_3,
 
     /// @brief Assigns the second register `src`s value to the first register `dest`
     KUTINSTRUCTION_ASSIGN_REGISTER,
@@ -89,10 +85,15 @@ enum KutInstructionName {
     /// @brief Loads the call stack as a table into the given register
     KUTINSTRUCTION_LOAD_TABLE,
 
+    /// @brief Returns the value in the register
+    KUTINSTRUCTION_RETURN_REGISTER,
+
+    /// @brief Stores the value of the register in the give closure
+    KUTINSTRUCTION_STORE_CLOSURE,
 
 
     /// @brief Symbolic instruction
-    KUTINSTRUCTION_PUSH_START = KUTINSTRUCTION_LOAD_TABLE,
+    KUTINSTRUCTION_PUSH_START = KUTINSTRUCTION_STORE_CLOSURE,
 
     /// @brief Pushes 1 register to the call stack
     KUTINSTRUCTION_PUSH_REGISTER_1,
@@ -124,39 +125,11 @@ enum KutInstructionName {
     /// @brief Pushes the call stack as a table directly to the previous call stack
     KUTINSTRUCTION_PUSH_TABLE,
 
+    /// @brief Returns the value at the top of the stack
+    KUTINSTRUCTION_RETURN_STACK,
 
-    /// @brief Symbolic instruction
-    KUTINSTRUCTION_CLOSURE_START = KUTINSTRUCTION_PUSH_TABLE,
-
-    /// @brief Pops the call stack to the closure (impossible, cannot pop from call stack)
+    /// @brief Pops a value from the call stack and assigns it to the given closure
     KUTINSTRUCTION_POP_CLOSURE,
-
-    /// @brief Methodcall, return value is sent to the closure, `self` is given register
-    KUTINSTRUCTION_METHODCALL_CR,
-
-    /// @brief Methodcall, return value is sent to the closure, `self` is given in the call stack
-    KUTINSTRUCTION_METHODCALL_CC,
-
-    /// @brief Sets the closure to the literal (impossible)
-    KUTINSTRUCTION_SETCLOSURE_LITERAL,
-
-    /// @brief Assigns the value of a closure to another closure (impossible)
-    KUTINSTRUCTION_SETCLOSURE_CLOSURE,
-
-    /// @brief Sets the closure to a function from the given template (impossible)
-    KUTINSTRUCTION_SETCLOSURE_TEMPLATE,
-
-    /// @brief Sets the closure to an 8-bit immediate integer
-    KUTINSTRUCTION_SETCLOSURE_INTEGER,
-
-    /// @brief Sets the closure to nil
-    KUTINSTRUCTION_SETCLOSURE_NIL,
-
-    /// @brief Sets the closure to undefined
-    KUTINSTRUCTION_SETCLOSURE_UNDEFINED,
-
-    /// @brief Sets the closure to the call stack
-    KUTINSTRUCTION_SETCLOSURE_TABLE,
 };
 
 union KutInstruction {
@@ -185,46 +158,38 @@ const char* kutfunc_serializeInstruction(KutInstruction instruction);
 void kutfunc_debugInstruction(KutInstruction instruction);
 
 KutInstruction kutinstruction_noOperation(void);
-KutInstruction kutinstruction_methodcallIR(uint8_t reg);
-KutInstruction kutinstruction_methodcallIC(void);
+KutInstruction kutinstruction_methodcallIR(uint8_t reg, uint8_t args);
+KutInstruction kutinstruction_methodcallIC(uint8_t args);
 KutInstruction kutinstruction_pushRegister2(uint8_t reg1, uint8_t reg2);
 KutInstruction kutinstruction_pushRegister3(uint8_t reg1, uint8_t reg2, uint8_t reg3);
-KutInstruction kutinstruction_createCallstack(void);
 
 // Result is assigned to a register
 
 KutInstruction kutinstruction_assignRegister(uint8_t src, uint8_t dest);
-KutInstruction kutinstruction_methodcallRR(uint8_t self, uint8_t ret);
-KutInstruction kutinstruction_methodcallRC(uint8_t ret);
+KutInstruction kutinstruction_methodcallRR(uint8_t self, uint8_t ret, uint8_t args);
+KutInstruction kutinstruction_methodcallRC(uint8_t ret, uint8_t args);
 KutInstruction kutinstruction_loadLiteral(uint8_t reg, uint16_t literal);
 KutInstruction kutinstruction_loadClosure(uint8_t reg, uint16_t closure);
 KutInstruction kutinstruction_loadTemplate(uint8_t reg, uint16_t template);
 KutInstruction kutinstruction_loadInteger(uint8_t reg, uint16_t integer);
 KutInstruction kutinstruction_loadNil(uint8_t reg);
 KutInstruction kutinstruction_loadUndefined(uint8_t reg);
-KutInstruction kutinstruction_loadTable(uint8_t reg);
+KutInstruction kutinstruction_loadTable(uint8_t reg, uint16_t size);
+KutInstruction kutinstruction_storeClosure(uint8_t reg, uint16_t closure);
 
 // Result is directly pushed to the call stack
 
 KutInstruction kutinstruction_pushRegister1(uint8_t reg);
-KutInstruction kutinstruction_methodcallPR(uint8_t self);
-KutInstruction kutinstruction_methodcallPC(void);
+KutInstruction kutinstruction_methodcallPR(uint8_t self, uint8_t args);
+KutInstruction kutinstruction_methodcallPC(uint8_t args);
 KutInstruction kutinstruction_pushLiteral(uint16_t literal);
 KutInstruction kutinstruction_pushClosure(uint16_t closure);
 KutInstruction kutinstruction_pushTemplate(uint16_t template);
 KutInstruction kutinstruction_pushInteger(uint16_t integer);
 KutInstruction kutinstruction_pushNil(void);
 KutInstruction kutinstruction_pushUndefined(void);
-KutInstruction kutinstruction_pushTable(void);
-
-// Result is assigned to a closure
-
-KutInstruction kutinstruction_methodcallCR(uint16_t ret, uint8_t self);
-KutInstruction kutinstruction_methodcallCC(uint16_t self);
-KutInstruction kutinstruction_setclosureInteger(uint16_t closure, uint8_t integer);
-KutInstruction kutinstruction_setclosureNil(uint16_t closure);
-KutInstruction kutinstruction_setclosureUndefined(uint16_t closure);
-KutInstruction kutinstruction_setclosureTable(uint16_t closure);
+KutInstruction kutinstruction_pushTable(uint16_t size);
+KutInstruction kutinstruction_popClosure(uint16_t closure);
 
 #define kutfunc_templateLiteral(_instructions, _literals, _register_count, _infos, ...) \
     (const KutFuncTemplate*)(const struct {const KutInstruction* instructions; const KutValue* literals; const KutFuncTemplate** function_templates; size_t register_count, capture_count; uint16_t captures[sizeof((uint16_t[]){_infos, ##__VA_ARGS__})/sizeof(uint16_t)];}[])\
