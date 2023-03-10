@@ -10,7 +10,7 @@ struct KutString {
     char data[];
 };
 
-KutString* kutstring_new(char* str, size_t len);
+KutString* kutstring_new(const char* str, size_t len);
 KutString* kutstring_zero(size_t len);
 KutString* kutstring_newCString(char* str);
 KutValue kutstring_wrap(KutString* str);

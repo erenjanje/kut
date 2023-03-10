@@ -26,7 +26,7 @@ struct KutCompilerInfo {
 void kutcompiler_new(KutCompilerInfo* context, KutCompilerInfo* info);
 void kutcompiler_destroyInfo(KutCompilerInfo* info);
 void kutcompiler_compileStatement(KutASTNode statement, KutCompilerInfo* info);
-void kutcompiler_compileFunction(KutASTNode func, KutCompilerInfo* info);
-void kutcompiler_compileIdentifier(KutASTNode identifier, KutCompilerInfo* info);
+void kutcompiler_compileFunction(KutASTNode func, KutCompilerInfo* info, bool is_reg, uint8_t reg);
+void kutcompiler_compileIdentifier(KutASTNode identifier, KutCompilerInfo* info, bool is_reg, uint8_t reg);
 
 #endif

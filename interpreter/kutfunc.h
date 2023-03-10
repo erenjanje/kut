@@ -177,6 +177,7 @@ KutInstruction kutinstruction_loadInteger(uint8_t reg, uint16_t integer);
 KutInstruction kutinstruction_loadNil(uint8_t reg);
 KutInstruction kutinstruction_loadUndefined(uint8_t reg);
 KutInstruction kutinstruction_loadTable(uint8_t reg, uint16_t size);
+KutInstruction kutinstruction_returnRegister(uint8_t reg);
 KutInstruction kutinstruction_storeClosure(uint8_t reg, uint16_t closure);
 
 // Result is directly pushed to the call stack
@@ -191,6 +192,7 @@ KutInstruction kutinstruction_pushInteger(uint16_t integer);
 KutInstruction kutinstruction_pushNil(void);
 KutInstruction kutinstruction_pushUndefined(void);
 KutInstruction kutinstruction_pushTable(uint16_t size);
+KutInstruction kutinstruction_returnStack(void);
 KutInstruction kutinstruction_popClosure(uint16_t closure);
 
 // #define kutfunc_templateLiteral(_instructions, _literals, _register_count, _infos, ...) \

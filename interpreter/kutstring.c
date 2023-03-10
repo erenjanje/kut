@@ -6,7 +6,7 @@
 
 #include "kuttable.h"
 
-KutString* kutstring_new(char* str, size_t len) {
+KutString* kutstring_new(const char* str, size_t len) {
     KutString* ret = calloc(1, sizeof(*ret) + (len+1)*sizeof(ret->data[0]));
     ret->len = len;
     ret->reference_count = 1;

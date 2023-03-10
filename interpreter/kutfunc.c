@@ -128,6 +128,8 @@ static const char* const kutfunc_instructionNames[] = {
     [KUTINSTRUCTION_PUSH_TABLE] = "PUSH_TABLE",
     [KUTINSTRUCTION_PUSH_TEMPLATE] = "PUSH_TEMPLATE",
     [KUTINSTRUCTION_PUSH_UNDEFINED] = "PUSH_UNDEFINED",
+    [KUTINSTRUCTION_RETURN_REGISTER] = "RETURN_REGISTER",
+    [KUTINSTRUCTION_RETURN_STACK] = "RETURN_STACK",
     [KUTINSTRUCTION_STORE_CLOSURE] = "STORE_CLOSURE",
 };
 
@@ -205,6 +207,7 @@ KutValue kutfunc_debug(KutValue* _self) {
             case KUTINSTRUCTION_LOAD_NIL:               total_length += snprintf(NULL, 0, " reg : %5d\n", instruction.l.reg); break;
             case KUTINSTRUCTION_LOAD_UNDEFINED:         total_length += snprintf(NULL, 0, " reg : %5d\n", instruction.l.reg); break;
             case KUTINSTRUCTION_LOAD_TABLE:             total_length += snprintf(NULL, 0, " reg : %5d\n", instruction.l.reg); break;
+            case KUTINSTRUCTION_RETURN_REGISTER:        total_length += snprintf(NULL, 0, " reg : %5d\n", instruction.r.reg0); break;
             case KUTINSTRUCTION_STORE_CLOSURE:          total_length += snprintf(NULL, 0, " reg : %5d clos: %5d\n", instruction.l.reg, instruction.l.literal); break;
             case KUTINSTRUCTION_PUSH_REGISTER_1:        total_length += snprintf(NULL, 0, " reg : %5d\n", instruction.r.reg0); break;
             case KUTINSTRUCTION_METHODCALL_PR:          total_length += snprintf(NULL, 0, " self: %5d args: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
@@ -216,6 +219,7 @@ KutValue kutfunc_debug(KutValue* _self) {
             case KUTINSTRUCTION_PUSH_NIL:               total_length += snprintf(NULL, 0, " \n"); break;
             case KUTINSTRUCTION_PUSH_UNDEFINED:         total_length += snprintf(NULL, 0, " \n"); break;
             case KUTINSTRUCTION_PUSH_TABLE:             total_length += snprintf(NULL, 0, " \n"); break;
+            case KUTINSTRUCTION_RETURN_STACK:           total_length += snprintf(NULL, 0, " \n"); break;
             case KUTINSTRUCTION_POP_CLOSURE:            total_length += snprintf(NULL, 0, " clos: %5d\n", instruction.l.literal); break;
         }
     }
@@ -351,6 +355,9 @@ KutInstruction kutinstruction_loadUndefined(uint8_t reg) {
 KutInstruction kutinstruction_loadTable(uint8_t reg, uint16_t size) {
     return (KutInstruction){.l = {.instruction = KUTINSTRUCTION_LOAD_TABLE, .reg = reg, .literal = size}};
 }
+KutInstruction kutinstruction_returnRegister(uint8_t reg) {
+    return (KutInstruction){.r = {.instruction = KUTINSTRUCTION_RETURN_REGISTER, .reg0 = reg, .reg1 = 0, .reg2 = 0}};
+}
 KutInstruction kutinstruction_storeClosure(uint8_t reg, uint16_t closure) {
     return (KutInstruction){.l = {.instruction = KUTINSTRUCTION_STORE_CLOSURE, .reg = reg, .literal = closure}};
 }
@@ -386,6 +393,9 @@ KutInstruction kutinstruction_pushUndefined(void) {
 }
 KutInstruction kutinstruction_pushTable(uint16_t size) {
     return (KutInstruction){.l = {.instruction = KUTINSTRUCTION_PUSH_TABLE, .reg = 0, .literal = size}};
+}
+KutInstruction kutinstruction_returnStack(void) {
+    return (KutInstruction){.r = {.instruction = KUTINSTRUCTION_RETURN_STACK, .reg0 = 0, .reg1 = 0, .reg2 = 0}};
 }
 KutInstruction kutinstruction_popClosure(uint16_t closure) {
     return (KutInstruction){.l = {.instruction = KUTINSTRUCTION_POP_CLOSURE, .reg = 0, .literal = closure}};

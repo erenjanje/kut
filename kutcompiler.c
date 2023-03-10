@@ -5,8 +5,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <inttypes.h>
 
 static const KutVariableInfo invalid_info = {.position = -1};
+
+typedef void (*KutCompileCallbackFn)(KutASTNode node, KutCompilerInfo* info, bool is_reg, uint8_t reg);
+static const KutCompileCallbackFn callbacks[KUTAST_FUNCTION+1];
 
 void kutcompiler_new(KutCompilerInfo* context, KutCompilerInfo* info) {
     *info = (KutCompilerInfo) {
@@ -135,45 +139,33 @@ static inline bool kutcompiler_isInteger(double num) {
     return num == floor(num);
 }
 
-void kutcompiler_pushNumber(KutCompilerInfo* info, double num) {
+void kutcompiler_compileNumber(KutASTNode _num, KutCompilerInfo* info, bool is_reg, uint8_t reg) {
+    double num = _num.token.num;
     if(kutcompiler_isInteger(num) and INT16_MIN <= num and num <= INT16_MAX) {
-        kutcompiler_pushInstruction(info, kutinstruction_pushInteger(num));
+        kutcompiler_pushInstruction(info, is_reg ? kutinstruction_loadInteger(reg, num) : kutinstruction_pushInteger(num));
     } else {
-        kutcompiler_pushInstruction(info, kutinstruction_pushLiteral(kutcompiler_pushLiteral(info, kutnumber_wrap(num))));
+        size_t literal_pos = kutcompiler_pushLiteral(info, kutnumber_wrap(num));
+        kutcompiler_pushInstruction(info, is_reg ? kutinstruction_loadLiteral(reg, literal_pos) : kutinstruction_pushLiteral(literal_pos));
     }
 }
 
-void kutcompiler_compilePushExpression(KutASTNode expression, KutCompilerInfo* info) {
+void kutcompiler_compileString(KutASTNode str, KutCompilerInfo* info, bool is_reg, uint8_t reg) {
+    KutValue string = kutstring_wrap(kutstring_new(str.token.token, str.token.length));
+    size_t literal_pos = kutcompiler_pushLiteral(info, string);
+    kutcompiler_pushInstruction(info, is_reg ? kutinstruction_loadLiteral(reg, literal_pos) : kutinstruction_pushLiteral(literal_pos));
+}
+
+void kutcompiler_compileExpression(KutASTNode expression, KutCompilerInfo* info, bool is_reg, uint8_t reg) {
     if(expression.children_count == 0) {
         return;
     }
     for(size_t i = 0; i < expression.children_count-1; i++) {
-        switch(expression.children[i].type) {
-            case KUTAST_IDENTIFIER: {
-                KutVariableInfo var = kutcompiler_getVariable(info, expression.children[i].token);
-                if(memcmp(&var, &invalid_info, sizeof(var)) == 0) {
-                    fprintf(stderr, "%d Undefined symbol %.*s\n", __LINE__, (int)var.token.length, var.token.token);
-                    continue;
-                }
-                if(var.is_closure) {
-                    kutcompiler_pushInstruction(info, kutinstruction_pushClosure(var.position));
-                } else {
-                    kutcompiler_pushInstruction(info, kutinstruction_pushRegister1(var.position));
-                }
-            } break;
-            case KUTAST_FUNCTION:
-            break;
-            case KUTAST_EXPRESSION:
-            break;
-            case KUTAST_NUMBER_LITERAL:
-                kutcompiler_pushNumber(info, expression.children[i].token.num);
-            break;
-        }
+        callbacks[expression.children[i].type](expression.children[i], info, false, 0);
     }
     KutValue method_name = kutstring_wrap(kutstring_new(expression.children[expression.children_count-1].token.token, expression.children[expression.children_count-1].token.length));
     size_t method_name_pos = kutcompiler_pushLiteral(info, method_name);
     kutcompiler_pushInstruction(info, kutinstruction_pushLiteral(method_name_pos));
-    kutcompiler_pushInstruction(info, kutinstruction_methodcallPC(expression.children_count));
+    kutcompiler_pushInstruction(info, is_reg ? kutinstruction_methodcallRC(reg, expression.children_count) : kutinstruction_methodcallPC(expression.children_count));
     // kut_decref(&method_name);
 }
 
@@ -184,28 +176,22 @@ void kutcompiler_compileStatement(KutASTNode statement, KutCompilerInfo* info) {
     if(statement.children_count == 0) {
         return;
     } else if(kutcompiler_isDeclaration(statement)) {
-        kutcompiler_declareVariable(info, statement.children[0].token);
+        KutVariableInfo var = kutcompiler_declareVariable(info, statement.children[0].token);
+        callbacks[statement.children[2].type](statement.children[2], info, true, var.position);
         return;
     } else if(kutcompiler_isAssignment(statement)) {
+        KutVariableInfo var = kutcompiler_getVariable(info, statement.children[0].token);
+        if(not var.is_closure) {
+            callbacks[statement.children[1].type](statement.children[1], info, true, var.position);
+        } else {
+            printf("%d\n", statement.children[1].type);
+            callbacks[statement.children[1].type](statement.children[1], info, false, 0);
+            kutcompiler_pushInstruction(info, kutinstruction_popClosure(var.position));
+        }
         return;
     }
     for(size_t i = 0; i < statement.children_count-1; i++) {
-        if(statement.children[i].type == KUTAST_IDENTIFIER) {
-            KutVariableInfo var = kutcompiler_getVariable(info, statement.children[i].token);
-            if(memcmp(&var, &invalid_info, sizeof(var)) == 0) {
-                fprintf(stderr, "%d Undefined symbol \"%.*s\"\n", __LINE__, (int)var.token.length, var.token.token);
-                continue;
-            }
-            if(var.is_closure) {
-                kutcompiler_pushInstruction(info, kutinstruction_pushClosure(var.position));
-            } else {
-                kutcompiler_pushInstruction(info, kutinstruction_pushRegister1(var.position));
-            }
-        } else if(statement.children[i].type == KUTAST_FUNCTION) {
-            kutcompiler_compileFunction(statement.children[i], info);
-        } else if(statement.children[i].type == KUTAST_EXPRESSION) {
-            kutcompiler_compilePushExpression(statement.children[i], info);
-        }
+        callbacks[statement.children[i].type](statement.children[i], info, false, 0);
     }
     KutValue method_name = kutstring_wrap(kutstring_new(statement.children[statement.children_count-1].token.token, statement.children[statement.children_count-1].token.length));
     size_t method_name_pos = kutcompiler_pushLiteral(info, method_name);
@@ -213,23 +199,69 @@ void kutcompiler_compileStatement(KutASTNode statement, KutCompilerInfo* info) {
     kutcompiler_pushInstruction(info, kutinstruction_methodcallIC(statement.children_count));
 }
 
-void kutcompiler_compileFunction(KutASTNode func, KutCompilerInfo* info) {
+void kutcompiler_compileFunction(KutASTNode func, KutCompilerInfo* info, bool is_reg, uint8_t reg) {
     KutCompilerInfo self_info;
     kutcompiler_new(info, &self_info);
     for(size_t i = 0; i < func.argument_count; i++) {
         kutcompiler_declareVariable(&self_info, func.arguments[i].token);
     }
     if(func.children_count != 0 and func.children[0].type != KUTAST_STATEMENT) {
-        //TODO: Single expression
+        if(func.children[0].type == KUTAST_IDENTIFIER and func.children_count == 1) {
+            KutVariableInfo var = kutcompiler_getVariable(&self_info, func.children[0].token);
+            if(var.is_closure) {
+                kutcompiler_pushInstruction(&self_info, kutinstruction_pushClosure(var.position));
+                kutcompiler_pushInstruction(&self_info, kutinstruction_returnStack());
+            } else {
+                kutcompiler_pushInstruction(&self_info, kutinstruction_returnRegister(var.position));
+            }
+            goto end;
+        }
+        func.type = KUTAST_EXPRESSION;
+        kutcompiler_compileExpression(func, &self_info, false, 0);
+        kutcompiler_pushInstruction(&self_info, kutinstruction_returnStack());
         goto end;
     }
     for(size_t i = 0; i < func.children_count; i++) {
         kutcompiler_compileStatement(func.children[i], &self_info);
     }
-end:
+end: {}
+    size_t variable_count = self_info.templates->data[self_info.template_pos].closure_count + self_info.templates->data[self_info.template_pos].register_count;
+    self_info.templates->data[self_info.template_pos].capture_infos = calloc(self_info.templates->data[self_info.template_pos].closure_count, sizeof(uint16_t));
+    for(size_t i = 0; i < variable_count; i++) {
+        if(self_info.variables[i].is_closure) {
+            printf("INFO: %"PRId16"\n", self_info.variables[i].closure_info);
+            self_info.templates->data[self_info.template_pos].capture_infos[i] = self_info.variables[i].closure_info;
+        }
+    }
+    kutcompiler_pushInstruction(info, is_reg ? kutinstruction_loadTemplate(reg, self_info.template_pos) : kutinstruction_pushTemplate(self_info.template_pos));
     kutcompiler_destroyInfo(&self_info);
 }
 
-void kutcompiler_compileIdentifier(KutASTNode identifier, KutCompilerInfo* info) {
-
+void kutcompiler_compileIdentifier(KutASTNode identifier, KutCompilerInfo* info, bool is_reg, uint8_t reg) {
+    KutVariableInfo var = kutcompiler_getVariable(info, identifier.token);
+    if(memcmp(&var, &invalid_info, sizeof(var)) == 0) {
+        fprintf(stderr, "Unknown identifier: %.*s\n", (int)identifier.token.length, identifier.token.token);
+        exit(EXIT_FAILURE);
+    }
+    if(var.is_closure) {
+        if(is_reg) {
+            kutcompiler_pushInstruction(info, kutinstruction_loadClosure(reg, var.position));
+        } else {
+            kutcompiler_pushInstruction(info, kutinstruction_pushClosure(var.position));
+        }
+    } else {
+        if(is_reg) {
+            kutcompiler_pushInstruction(info, kutinstruction_assignRegister(reg, var.position));
+        } else {
+            kutcompiler_pushInstruction(info, kutinstruction_pushRegister1(var.position));
+        }
+    }
 }
+
+static const KutCompileCallbackFn callbacks[] = {
+    [KUTAST_NUMBER_LITERAL] = kutcompiler_compileNumber,
+    [KUTAST_STRING_LITERAL] = kutcompiler_compileString,
+    [KUTAST_EXPRESSION] = kutcompiler_compileExpression,
+    [KUTAST_FUNCTION] = kutcompiler_compileFunction,
+    [KUTAST_IDENTIFIER] = kutcompiler_compileIdentifier,
+};
