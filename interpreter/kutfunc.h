@@ -4,34 +4,36 @@
 #include "kutval.h"
 
 typedef struct KutFuncTemplate KutFuncTemplate;
+typedef struct KutTemplateArray KutTemplateArray;
+typedef struct KutValueArray KutValueArray;
 typedef struct KutFunc KutFunc;
 
 struct KutFuncTemplate {
     size_t instruction_count;
     KutInstruction* instructions;
-    size_t literal_count;
-    KutValue* literals;
-    size_t template_count;
-    const KutFuncTemplate** function_templates;
+    KutValueArray* literals;
+    KutTemplateArray* function_templates;
     size_t register_count;
-    size_t capture_count;
-    uint16_t capture_infos[];
+    size_t closure_count;
+    uint16_t* capture_infos;
+};
+
+struct KutTemplateArray {
+    size_t len;
+    KutFuncTemplate* data;
+};
+
+struct KutValueArray {
+    size_t len;
+    KutValue* data;
 };
 
 struct KutFunc {
     size_t reference_count;
-    size_t instruction_count;
-    const KutInstruction* instructions;
-    size_t literal_count;
-    KutValue* literals;
-    size_t template_count;
-    const KutFuncTemplate** function_templates;
+    KutFuncTemplate* template;
+    KutTable* call_stack;
+    KutValue* closures;
     KutValue ret;
-    size_t current_call_stack;
-    KutTable** call_stack;
-    size_t capture_count;
-    KutValue* captures;
-    size_t register_count;
     KutValue registers[];
 };
 
@@ -191,15 +193,15 @@ KutInstruction kutinstruction_pushUndefined(void);
 KutInstruction kutinstruction_pushTable(uint16_t size);
 KutInstruction kutinstruction_popClosure(uint16_t closure);
 
-#define kutfunc_templateLiteral(_instructions, _literals, _register_count, _infos, ...) \
-    (const KutFuncTemplate*)(const struct {const KutInstruction* instructions; const KutValue* literals; const KutFuncTemplate** function_templates; size_t register_count, capture_count; uint16_t captures[sizeof((uint16_t[]){_infos, ##__VA_ARGS__})/sizeof(uint16_t)];}[])\
-    {{\
-        .instructions = _instructions,\
-        .literals = _literals,\
-        .function_templates = NULL,\
-        .register_count = _register_count,\
-        .capture_count = sizeof((uint16_t[]){_infos, ##__VA_ARGS__})/sizeof(uint16_t),\
-        .captures = {_infos, ##__VA_ARGS__}}\
-    }
+// #define kutfunc_templateLiteral(_instructions, _literals, _register_count, _infos, ...) \
+//     (const KutFuncTemplate*)(const struct {const KutInstruction* instructions; const KutValue* literals; const KutFuncTemplate** function_templates; size_t register_count, closure_count; uint16_t closures[sizeof((uint16_t[]){_infos, ##__VA_ARGS__})/sizeof(uint16_t)];}[])\
+//     {{\
+//         .instructions = _instructions,\
+//         .literals = _literals,\
+//         .function_templates = NULL,\
+//         .register_count = _register_count,\
+//         .closure_count = sizeof((uint16_t[]){_infos, ##__VA_ARGS__})/sizeof(uint16_t),\
+//         .closures = {_infos, ##__VA_ARGS__}}\
+//     }
 
 #endif

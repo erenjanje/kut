@@ -70,7 +70,7 @@ bool kutvm_loadLiteral(KutFunc* func, KutInstruction instruction) {
     return false;
 }
 bool kutvm_loadClosure(KutFunc* func, KutInstruction instruction) {
-    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), kutreference_cast(func->captures[instruction.l.literal]));
+    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), kutreference_cast(func->closures[instruction.l.literal]));
     return false;
 }
 bool kutvm_loadTemplate(KutFunc* func, KutInstruction instruction) {

@@ -18,12 +18,12 @@ struct KutVariableInfo {
 
 struct KutCompilerInfo {
     KutCompilerInfo* context;
-    size_t register_count;
-    size_t closure_count;
     KutVariableInfo* variables;
-    KutFuncTemplate* template;
+    size_t template_pos;
+    KutTemplateArray* templates;
 };
 
+void kutcompiler_new(KutCompilerInfo* context, KutCompilerInfo* info);
 void kutcompiler_destroyInfo(KutCompilerInfo* info);
 void kutcompiler_compileStatement(KutASTNode statement, KutCompilerInfo* info);
 void kutcompiler_compileFunction(KutASTNode func, KutCompilerInfo* info);
