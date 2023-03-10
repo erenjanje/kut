@@ -62,7 +62,7 @@ void kutfunc_decref(KutValue* _self) {
     if(self->reference_count == 0)
         return;
     if(self->reference_count == 1) {
-        for(size_t i = 0; i < self->reference_count; i++) {
+        for(size_t i = 0; i < self->template->register_count; i++) {
             kut_decref(&self->registers[i]);
         }
         for(size_t i = 0; i < self->template->closure_count; i++) {

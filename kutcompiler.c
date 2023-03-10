@@ -184,7 +184,6 @@ void kutcompiler_compileStatement(KutASTNode statement, KutCompilerInfo* info) {
         if(not var.is_closure) {
             callbacks[statement.children[1].type](statement.children[1], info, true, var.position);
         } else {
-            printf("%d\n", statement.children[1].type);
             callbacks[statement.children[1].type](statement.children[1], info, false, 0);
             kutcompiler_pushInstruction(info, kutinstruction_popClosure(var.position));
         }
@@ -229,7 +228,6 @@ end: {}
     self_info.templates->data[self_info.template_pos].capture_infos = calloc(self_info.templates->data[self_info.template_pos].closure_count, sizeof(uint16_t));
     for(size_t i = 0; i < variable_count; i++) {
         if(self_info.variables[i].is_closure) {
-            printf("INFO: %"PRId16"\n", self_info.variables[i].closure_info);
             self_info.templates->data[self_info.template_pos].capture_infos[i] = self_info.variables[i].closure_info;
         }
     }

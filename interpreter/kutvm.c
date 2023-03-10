@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 static KutValue* kutvm_getRegisterPointer(KutFunc* func, size_t reg) {
-    if(reg >= func->register_count) {
+    if(reg >= func->template->register_count) {
         return NULL;
     }
     if(istype(func->registers[reg], kutreference)) {
@@ -16,7 +16,7 @@ static KutValue* kutvm_getRegisterPointer(KutFunc* func, size_t reg) {
 }
 
 static KutValue kutvm_getRegister(KutFunc* func, size_t reg) {
-    if(reg >= func->register_count) {
+    if(reg >= func->template->register_count) {
         return kut_undefined;
     }
     if(istype(func->registers[reg], kutreference)) {
@@ -46,12 +46,12 @@ bool kutvm_methodcallIC(KutFunc* func, KutInstruction instruction) {
     return false;
 }
 bool kutvm_pushRegister2(KutFunc* func, KutInstruction instruction) {
-    KutValue tmp = kuttable_wrap(func->call_stack[func->current_call_stack]);
+    KutValue tmp = kuttable_wrap(func->call_stack);
     kuttable_append(&tmp, kuttable_literal(kutvm_getRegister(func, instruction.r.reg0), kutvm_getRegister(func, instruction.r.reg1)));
     return false;
 }
 bool kutvm_pushRegister3(KutFunc* func, KutInstruction instruction) {
-    KutValue tmp = kuttable_wrap(func->call_stack[func->current_call_stack]);
+    KutValue tmp = kuttable_wrap(func->call_stack);
     kuttable_append(&tmp, kuttable_literal(kutvm_getRegister(func, instruction.r.reg0), kutvm_getRegister(func, instruction.r.reg1), kutvm_getRegister(func, instruction.r.reg2)));
     return false;
 }
@@ -66,7 +66,7 @@ bool kutvm_methodcallRC(KutFunc* func, KutInstruction instruction) {
     return false;
 }
 bool kutvm_loadLiteral(KutFunc* func, KutInstruction instruction) {
-    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &func->literals[instruction.l.literal]);
+    kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &func->template->literals->data[instruction.l.literal]);
     return false;
 }
 bool kutvm_loadClosure(KutFunc* func, KutInstruction instruction) {
@@ -74,7 +74,7 @@ bool kutvm_loadClosure(KutFunc* func, KutInstruction instruction) {
     return false;
 }
 bool kutvm_loadTemplate(KutFunc* func, KutInstruction instruction) {
-    KutValue tmp = kutfunc_wrap(kutfunc_new(func, func->function_templates[instruction.l.literal]));
+    KutValue tmp = kutfunc_wrap(kutfunc_new(func, &func->template->function_templates->data[instruction.l.literal]));
     kut_set(kutvm_getRegisterPointer(func, instruction.l.reg), &tmp);
     kut_decref(&tmp);
     return false;

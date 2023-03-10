@@ -18,6 +18,7 @@ DEPENDS = $(patsubst $(SRCDIR)/%.$(SRC_EXTENSION),%.d,$(SRCS))
 HEADERS = $(wildcard $(INCDIR)/*.h)
 GPERFFILES = $(wildcard $(SRCDIR)/*.gperf)
 METHODFILES = $(patsubst $(SRCDIR)/%.gperf, $(SRCDIR)/%.methods, $(GPERFFILES))
+TESTFILE = test.c
 
 CFLAGS=-fsanitize=address -fsanitize=leak -I"./$(INCDIR)" -Wno-unused-parameter -Wno-ignored-attributes -fopenmp -flto -mavx2 -std=c99 -pedantic -Wall -Wextra -g
 LDFLAGS=$(CFLAGS) -fPIC -lm -fopenmp
@@ -33,7 +34,7 @@ run: $(METHODFILES) build
 	@echo
 .PHONY: run
 
-build: $(OBJS) $(CURDIROBJS)
+build: $(OBJS) $(CURDIROBJS) $(TESTFILE)
 	@$(COMPILER) $(filter-out %.h,$^) -o $(BINDIR)/$(EXECNAME) $(LDFLAGS)
 	@echo LD $<
 .PHONY: 
@@ -64,6 +65,9 @@ $(OBJDIR)/%.$(OBJ_EXTENSION): $(SRCDIR)/%.$(SRC_EXTENSION)
 $(OBJDIR)/%.$(OBJ_EXTENSION): ./%.$(SRC_EXTENSION)
 	@$(COMPILER) $(CFLAGS) -MMD -MP -MF $(patsubst %.$(SRC_EXTENSION),%.d,$<) -c $< -o $@
 	@echo CC $<
+
+%.c: %.kut
+	xxd -i $< > $@
 
 init:
 	@echo Initializing Folders

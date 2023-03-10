@@ -84,7 +84,7 @@ void test_parser() {
 }
 
 void test_compiler() {
-    #include "test.kut.c"
+    #include "test.c"
         // "liste degiskeni [1 2 3 4] olsun\n"
         // "a degiskeni 5 olsun\n"
         // "b degiskeni 8 olsun\n"
@@ -108,18 +108,18 @@ void test_compiler() {
     KutValue* funcs = calloc(root_info.templates->len, sizeof(funcs[0]));
     for(size_t i = 0; i < root_info.templates->len; i++) {
         funcs[i] = kutfunc_wrap(kutfunc_new(i == 0 ? NULL : kutfunc_cast(funcs[i-1]), &root_info.templates->data[i]));
+    }
+    for(size_t i = 0; i < root_info.templates->len; i++) {
         KutString* d = kutstring_cast(kutfunc_debug(&funcs[i]));
         printf("Template %zu:\n%.*s\n", i, kutstring_format(d));
         free(d);
     }
     for(size_t i = 0; i < root_info.templates->len; i++) {
         kut_decref(&funcs[i]);
-    }
-    free(funcs);
-    for(size_t i = 0; i < root_info.templates->len; i++) {
         free(root_info.templates->data[i].capture_infos);
         free(root_info.templates->data[i].instructions);
     }
+    free(funcs);
     printf("Literals: [");
     for(size_t i = 0; i < root_info.templates->data[0].literals->len; i++) {
         KutValue* self = &root_info.templates->data[0].literals->data[i];
