@@ -40,9 +40,6 @@ struct KutFunc {
 enum KutInstructionName {
     /// @brief No operation, empty instruction
     KUTINSTRUCTION_NO_OPERATION,
-    
-    /// @brief Methodcall, return value is ignored, `self` is given register
-    KUTINSTRUCTION_METHODCALL_IR,
 
     /// @brief Methodcall, return value is ignored, `self` is given in the call stack
     KUTINSTRUCTION_METHODCALL_IC,
@@ -53,15 +50,17 @@ enum KutInstructionName {
     /// @brief Pushes 3 registers to the call stack
     KUTINSTRUCTION_PUSH_REGISTER_3,
 
+    /// @brief Jumps unconditionally
+    KUTINSTRUCTION_JUMP,
+
+    /// @brief Jumps if condition on top of the stack is NOT true
+    KUTINSTRUCTION_JUMP_UNLESS,
 
     /// @brief Symbolic instruction
-    KUTINSTRUCTION_REGISTER_START = KUTINSTRUCTION_PUSH_REGISTER_3,
+    KUTINSTRUCTION_REGISTER_START = KUTINSTRUCTION_JUMP_UNLESS,
 
     /// @brief Assigns the second register `src`s value to the first register `dest`
     KUTINSTRUCTION_ASSIGN_REGISTER,
-    
-    /// @brief Methodcall, return value is given to the register, `self` is given register
-    KUTINSTRUCTION_METHODCALL_RR,
     
     /// @brief Methodcall, return value is given to the register, `self` is given in the call stack
     KUTINSTRUCTION_METHODCALL_RC,
@@ -99,9 +98,6 @@ enum KutInstructionName {
 
     /// @brief Pushes 1 register to the call stack
     KUTINSTRUCTION_PUSH_REGISTER_1,
-
-    /// @brief Methodcall, return value is directly pushed to the previous call stack, `self` is given register
-    KUTINSTRUCTION_METHODCALL_PR,
 
     /// @brief Methodcall, return value is directly pushed to the previous call stack, `self` is given in the call stack
     KUTINSTRUCTION_METHODCALL_PC,
@@ -156,6 +152,8 @@ KutFunc* kutfunc_cast(KutValue val);
 KutValue kutfunc_run(KutValue* self, KutTable* args);
 KutValue kutfunc_debug(KutValue* _self);
 
+void kutfunctemplate_debug(KutFuncTemplate* template);
+
 const char* kutfunc_serializeInstruction(KutInstruction instruction);
 void kutfunc_debugInstruction(KutInstruction instruction);
 
@@ -164,6 +162,8 @@ KutInstruction kutinstruction_methodcallIR(uint8_t reg, uint8_t args);
 KutInstruction kutinstruction_methodcallIC(uint8_t args);
 KutInstruction kutinstruction_pushRegister2(uint8_t reg1, uint8_t reg2);
 KutInstruction kutinstruction_pushRegister3(uint8_t reg1, uint8_t reg2, uint8_t reg3);
+KutInstruction kutinstruction_jump(uint16_t offset);
+KutInstruction kutinstruction_jumpUnless(uint16_t offset);
 
 // Result is assigned to a register
 

@@ -39,9 +39,6 @@ static void kutvm_setRegister(KutFunc* func, size_t reg, KutValue val) {
 bool kutvm_noOperation(KutFunc* func, KutInstruction instruction) {
     return false;
 }
-bool kutvm_methodcallIR(KutFunc* func, KutInstruction instruction) {
-    return false;
-}
 bool kutvm_methodcallIC(KutFunc* func, KutInstruction instruction) {
     return false;
 }
@@ -57,9 +54,6 @@ bool kutvm_pushRegister3(KutFunc* func, KutInstruction instruction) {
 }
 bool kutvm_assignRegister(KutFunc* func, KutInstruction instruction) {
     kut_set(kutvm_getRegisterPointer(func, instruction.r.reg0), kutvm_getRegisterPointer(func, instruction.r.reg1));
-    return false;
-}
-bool kutvm_methodcallRR(KutFunc* func, KutInstruction instruction) {
     return false;
 }
 bool kutvm_methodcallRC(KutFunc* func, KutInstruction instruction) {
@@ -103,9 +97,6 @@ bool kutvm_storeClosure(KutFunc* func, KutInstruction instruction) {
 bool kutvm_pushRegister1(KutFunc* func, KutInstruction instruction) {
     return false;
 }
-bool kutvm_methodcallPR(KutFunc* func, KutInstruction instruction) {
-    return false;
-}
 bool kutvm_methodcallPC(KutFunc* func, KutInstruction instruction) {
     return false;
 }
@@ -136,12 +127,10 @@ bool kutvm_popClosure(KutFunc* func, KutInstruction instruction) {
 
 KutInstructionHandler instruction_handlers[] = {
     [KUTINSTRUCTION_NO_OPERATION] = kutvm_noOperation,
-    [KUTINSTRUCTION_METHODCALL_IR] = kutvm_methodcallIR,
     [KUTINSTRUCTION_METHODCALL_IC] = kutvm_methodcallIC,
     [KUTINSTRUCTION_PUSH_REGISTER_2] = kutvm_pushRegister2,
     [KUTINSTRUCTION_PUSH_REGISTER_3] = kutvm_pushRegister3,
     [KUTINSTRUCTION_ASSIGN_REGISTER] = kutvm_assignRegister,
-    [KUTINSTRUCTION_METHODCALL_RR] = kutvm_methodcallRR,
     [KUTINSTRUCTION_METHODCALL_RC] = kutvm_methodcallRC,
     [KUTINSTRUCTION_LOAD_LITERAL] = kutvm_loadLiteral,
     [KUTINSTRUCTION_LOAD_CLOSURE] = kutvm_loadClosure,
@@ -152,7 +141,6 @@ KutInstructionHandler instruction_handlers[] = {
     [KUTINSTRUCTION_LOAD_TABLE] = kutvm_loadTable,
     [KUTINSTRUCTION_STORE_CLOSURE] = kutvm_storeClosure,
     [KUTINSTRUCTION_PUSH_REGISTER_1] = kutvm_pushRegister1,
-    [KUTINSTRUCTION_METHODCALL_PR] = kutvm_methodcallPR,
     [KUTINSTRUCTION_METHODCALL_PC] = kutvm_methodcallPC,
     [KUTINSTRUCTION_PUSH_LITERAL] = kutvm_pushLiteral,
     [KUTINSTRUCTION_PUSH_CLOSURE] = kutvm_pushClosure,

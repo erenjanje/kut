@@ -104,27 +104,67 @@ KutASTNode kutast_newFunction(const char** _string, const char* endptr) {
                 ret.arguments[ret.argument_count].type = KUTAST_IDENTIFIER;
             break;
 
-            case KUTTOKEN_END_FUNCTION:
-                ret.type = KUTAST_INVALID;
-                goto end;
+            case KUTTOKEN_NUMBER:
+                ret.arguments[ret.argument_count].type = KUTAST_NUMBER_LITERAL;
+            break;
+
+            case KUTTOKEN_STRING:
+                ret.arguments[ret.argument_count].type = KUTAST_STRING_LITERAL;
             break;
 
             case KUTTOKEN_ARGUMENT_SEPEARTOR:
                 goto next;
             break;
 
-            case KUTTOKEN_NUMBER:
-            case KUTTOKEN_STRING:
-            case KUTTOKEN_END_STATEMENT:
+            case KUTTOKEN_END_STATEMENT: {
+                KutASTNode first_statement = (KutASTNode){
+                    .type = KUTAST_STATEMENT,
+                    .children_count = ret.argument_count,
+                    .children = ret.arguments,
+                    .arguments = NULL,
+                    .argument_count = 0,
+                };
+                ret.arguments = calloc(1, sizeof(ret.arguments[0]));
+                ret.arguments[0] = first_statement;
+                ret.argument_count = 1;
+                size_t tmp = ret.argument_count;
+                ret.argument_count = ret.children_count;
+                ret.children_count = tmp;
+                KutASTNode* temp = ret.arguments;
+                ret.arguments = ret.children;
+                ret.children = temp;
+                kutast_parseMultiLineFunction(&string, endptr, &ret);
+                goto end;
+            } break;
+
             case KUTTOKEN_END_EXPRESSION:
             case KUTTOKEN_END_TABLE:
-            case KUTTOKEN_START_EXPRESSION:
-            case KUTTOKEN_START_TABLE:
-            case KUTTOKEN_START_FUNCTION:
                 ret.arguments[ret.argument_count].type = KUTAST_INVALID;
                 ret.argument_count += 1;
                 goto end;
             break;
+
+            case KUTTOKEN_START_EXPRESSION:
+                ret.arguments[ret.argument_count] = kutast_newExpression(&string, endptr);
+            break;
+
+            case KUTTOKEN_START_TABLE:
+                ret.arguments[ret.argument_count] = kutast_newTable(&string, endptr);
+            break;
+
+            case KUTTOKEN_START_FUNCTION:
+                ret.arguments[ret.argument_count] = kutast_newFunction(&string, endptr);
+            break;
+            
+            case KUTTOKEN_END_FUNCTION: {
+                size_t tmp = ret.argument_count;
+                ret.argument_count = ret.children_count;
+                ret.children_count = tmp;
+                KutASTNode* temp = ret.arguments;
+                ret.arguments = ret.children;
+                ret.children = temp;
+                goto end;
+            } break;
         }
         ret.argument_count += 1;
     }
@@ -250,8 +290,9 @@ static void kutast__debug(KutASTNode node, size_t depth, const char* indent) {
         case KUTAST_FUNCTION:
             printf("FUNCTION{");
             for(size_t i = 0; i < node.argument_count; i++) {
-                printf("%.*s%s", (int)node.arguments[i].token.length, node.arguments[i].token.token, i == node.argument_count-1 ? "}\n" : " ");
+                printf("%.*s%s", (int)node.arguments[i].token.length, node.arguments[i].token.token, i == node.argument_count-1 ? "" : " ");
             }
+            printf("}\n");
             for(size_t i = 0; i < node.children_count; i++) {
                 kutast__debug(node.children[i], depth+1, indent);
             }

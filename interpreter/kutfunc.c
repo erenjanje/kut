@@ -103,6 +103,8 @@ KutValue kutfunc_run(KutValue* _self, KutTable* args) {
 
 static const char* const kutfunc_instructionNames[] = {
     [KUTINSTRUCTION_ASSIGN_REGISTER] = "ASSIGN_REGISTER",
+    [KUTINSTRUCTION_JUMP] = "JUMP",
+    [KUTINSTRUCTION_JUMP_UNLESS] = "JUMP_UNLESS",
     [KUTINSTRUCTION_LOAD_CLOSURE] = "LOAD_CLOSURE",
     [KUTINSTRUCTION_LOAD_INTEGER] = "LOAD_INTEGER",
     [KUTINSTRUCTION_LOAD_LITERAL] = "LOAD_LITERAL",
@@ -111,11 +113,8 @@ static const char* const kutfunc_instructionNames[] = {
     [KUTINSTRUCTION_LOAD_TEMPLATE] = "LOAD_TEMPLATE",
     [KUTINSTRUCTION_LOAD_UNDEFINED] = "LOAD_UNDEFINED",
     [KUTINSTRUCTION_METHODCALL_IC] = "METHODCALL_IC",
-    [KUTINSTRUCTION_METHODCALL_IR] = "METHODCALL_IR",
     [KUTINSTRUCTION_METHODCALL_PC] = "METHODCALL_PC",
-    [KUTINSTRUCTION_METHODCALL_PR] = "METHODCALL_PR",
     [KUTINSTRUCTION_METHODCALL_RC] = "METHODCALL_RC",
-    [KUTINSTRUCTION_METHODCALL_RR] = "METHODCALL_RR",
     [KUTINSTRUCTION_NO_OPERATION] = "NO_OPERATION",
     [KUTINSTRUCTION_POP_CLOSURE] = "POP_CLOSURE",
     [KUTINSTRUCTION_PUSH_CLOSURE] = "PUSH_CLOSURE",
@@ -137,31 +136,30 @@ void kutfunc_debugInstruction(KutInstruction instruction) {
     printf("%-20s ", kutfunc_instructionNames[instruction.r.instruction]);
     switch(instruction.r.instruction) {
                 case KUTINSTRUCTION_NO_OPERATION: printf(""); break;
-                case KUTINSTRUCTION_METHODCALL_IR: printf("reg : %5d", instruction.r.reg0); break;
-                case KUTINSTRUCTION_METHODCALL_IC: printf(""); break;
+                case KUTINSTRUCTION_METHODCALL_IC: printf("args: %5d", instruction.r.reg0); break;
                 case KUTINSTRUCTION_PUSH_REGISTER_2: printf("reg1: %5d reg2: %5d", instruction.r.reg0, instruction.r.reg1); break;
                 case KUTINSTRUCTION_PUSH_REGISTER_3: printf("reg1: %5d reg2: %5d reg3: %5d", instruction.r.reg0, instruction.r.reg1, instruction.r.reg2); break;
+                case KUTINSTRUCTION_JUMP: printf("zort"); break;
+                case KUTINSTRUCTION_JUMP_UNLESS: printf("hort"); break;
                 case KUTINSTRUCTION_ASSIGN_REGISTER: printf("src : %5d dest: %5d", instruction.r.reg0, instruction.r.reg1); break;
-                case KUTINSTRUCTION_METHODCALL_RR: printf("self: %5d ret : %5d", instruction.r.reg0, instruction.r.reg1); break;
-                case KUTINSTRUCTION_METHODCALL_RC: printf("ret : %5d", instruction.r.reg0); break;
+                case KUTINSTRUCTION_METHODCALL_RC: printf("ret : %5d args: %5d", instruction.r.reg0, instruction.r.reg1); break;
                 case KUTINSTRUCTION_LOAD_LITERAL: printf("reg : %5d lit : %5d", instruction.l.reg, instruction.l.literal); break;
                 case KUTINSTRUCTION_LOAD_CLOSURE: printf("reg : %5d clos: %5d", instruction.l.reg, instruction.l.literal); break;
                 case KUTINSTRUCTION_LOAD_TEMPLATE: printf("reg : %5d temp: %5d", instruction.l.reg, instruction.l.literal); break;
                 case KUTINSTRUCTION_LOAD_INTEGER: printf("reg : %5d int : %5d", instruction.l.reg, instruction.l.literal); break;
                 case KUTINSTRUCTION_LOAD_NIL: printf("reg : %5d", instruction.l.reg); break;
                 case KUTINSTRUCTION_LOAD_UNDEFINED: printf("reg : %5d", instruction.l.reg); break;
-                case KUTINSTRUCTION_LOAD_TABLE: printf("reg : %5d", instruction.l.reg); break;
+                case KUTINSTRUCTION_LOAD_TABLE: printf("reg : %5d size: %5d", instruction.l.reg, instruction.l.literal); break;
                 case KUTINSTRUCTION_STORE_CLOSURE: printf("reg : %5d clos: %5d", instruction.l.reg, instruction.l.literal); break;
                 case KUTINSTRUCTION_PUSH_REGISTER_1: printf("reg : %5d", instruction.r.reg0); break;
-                case KUTINSTRUCTION_METHODCALL_PR: printf("self: %5d", instruction.l.reg); break;
-                case KUTINSTRUCTION_METHODCALL_PC: printf(""); break;
+                case KUTINSTRUCTION_METHODCALL_PC: printf("args: %5d", instruction.r.reg0); break;
                 case KUTINSTRUCTION_PUSH_LITERAL: printf("lit : %5d", instruction.l.literal); break;
                 case KUTINSTRUCTION_PUSH_CLOSURE: printf("clo : %5d", instruction.l.literal); break;
                 case KUTINSTRUCTION_PUSH_TEMPLATE: printf("temp: %5d", instruction.l.literal); break;
                 case KUTINSTRUCTION_PUSH_INTEGER: printf("int : %5d", instruction.l.literal); break;
                 case KUTINSTRUCTION_PUSH_NIL: printf(""); break;
                 case KUTINSTRUCTION_PUSH_UNDEFINED: printf(""); break;
-                case KUTINSTRUCTION_PUSH_TABLE: printf(""); break;
+                case KUTINSTRUCTION_PUSH_TABLE: printf("size: %5d", instruction.l.literal); break;
                 case KUTINSTRUCTION_POP_CLOSURE: printf("clo : %5d", instruction.l.literal); break;
     }
     printf("\n");
@@ -172,6 +170,21 @@ void kutfunc_debugInstruction(KutInstruction instruction) {
 #include <inttypes.h>
 
 static KutString* tostring_name = kutstring_literal("metin-yap");
+
+void kutfunctemplate_debug(KutFuncTemplate* template) {
+    printf("Register Count: %zu\n", template->register_count);
+    printf("Closure Count: %zu\n", template->closure_count);
+    printf("Instruction Count: %zu\n", template->instruction_count);
+    printf("Instructions:\n");
+    for(size_t i = 0; i < template->instruction_count; i++) {
+        printf("   ");
+        kutfunc_debugInstruction(template->instructions[i]);
+    }
+    printf("Capture Infos:\n");
+    for(size_t i = 0; i < template->closure_count; i++) {
+        printf("   %d\n", template->capture_infos[i]);
+    }
+}
 
 KutValue kutfunc_debug(KutValue* _self) {
     KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
@@ -193,12 +206,12 @@ KutValue kutfunc_debug(KutValue* _self) {
         total_length += snprintf(NULL, 0, "   %-19s", kutfunc_instructionNames[instruction.r.instruction]);
         switch(instruction.r.instruction) {
             case KUTINSTRUCTION_NO_OPERATION:           total_length += snprintf(NULL, 0, " \n"); break;
-            case KUTINSTRUCTION_METHODCALL_IR:          total_length += snprintf(NULL, 0, " reg : %5d args: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
             case KUTINSTRUCTION_METHODCALL_IC:          total_length += snprintf(NULL, 0, " args: %5d\n", instruction.r.reg0); break;
             case KUTINSTRUCTION_PUSH_REGISTER_2:        total_length += snprintf(NULL, 0, " reg1: %5d reg2: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
             case KUTINSTRUCTION_PUSH_REGISTER_3:        total_length += snprintf(NULL, 0, " reg1: %5d reg2: %5d reg3: %5d\n", instruction.r.reg0, instruction.r.reg1, instruction.r.reg2); break;
+            case KUTINSTRUCTION_JUMP:                   total_length += snprintf(NULL, 0, " offs: %5d\n", instruction.l.literal); break;
+            case KUTINSTRUCTION_JUMP_UNLESS:            total_length += snprintf(NULL, 0, " offs: %5d\n", instruction.l.literal); break;
             case KUTINSTRUCTION_ASSIGN_REGISTER:        total_length += snprintf(NULL, 0, " src : %5d dest: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
-            case KUTINSTRUCTION_METHODCALL_RR:          total_length += snprintf(NULL, 0, " self: %5d ret : %5d args: %5d\n", instruction.r.reg0, instruction.r.reg1, instruction.r.reg2); break;
             case KUTINSTRUCTION_METHODCALL_RC:          total_length += snprintf(NULL, 0, " ret : %5d args: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
             case KUTINSTRUCTION_LOAD_LITERAL:           total_length += snprintf(NULL, 0, " reg : %5d lit : %5d\n", instruction.l.reg, instruction.l.literal); break;
             case KUTINSTRUCTION_LOAD_CLOSURE:           total_length += snprintf(NULL, 0, " reg : %5d clos: %5d\n", instruction.l.reg, instruction.l.literal); break;
@@ -206,11 +219,10 @@ KutValue kutfunc_debug(KutValue* _self) {
             case KUTINSTRUCTION_LOAD_INTEGER:           total_length += snprintf(NULL, 0, " reg : %5d int : %5d\n", instruction.l.reg, instruction.l.literal); break;
             case KUTINSTRUCTION_LOAD_NIL:               total_length += snprintf(NULL, 0, " reg : %5d\n", instruction.l.reg); break;
             case KUTINSTRUCTION_LOAD_UNDEFINED:         total_length += snprintf(NULL, 0, " reg : %5d\n", instruction.l.reg); break;
-            case KUTINSTRUCTION_LOAD_TABLE:             total_length += snprintf(NULL, 0, " reg : %5d\n", instruction.l.reg); break;
+            case KUTINSTRUCTION_LOAD_TABLE:             total_length += snprintf(NULL, 0, " reg : %5d\n size: %5d", instruction.l.reg, instruction.l.literal); break;
             case KUTINSTRUCTION_RETURN_REGISTER:        total_length += snprintf(NULL, 0, " reg : %5d\n", instruction.r.reg0); break;
             case KUTINSTRUCTION_STORE_CLOSURE:          total_length += snprintf(NULL, 0, " reg : %5d clos: %5d\n", instruction.l.reg, instruction.l.literal); break;
             case KUTINSTRUCTION_PUSH_REGISTER_1:        total_length += snprintf(NULL, 0, " reg : %5d\n", instruction.r.reg0); break;
-            case KUTINSTRUCTION_METHODCALL_PR:          total_length += snprintf(NULL, 0, " self: %5d args: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
             case KUTINSTRUCTION_METHODCALL_PC:          total_length += snprintf(NULL, 0, " args: %5d\n", instruction.r.reg0); break;
             case KUTINSTRUCTION_PUSH_LITERAL:           total_length += snprintf(NULL, 0, " lit : %5d\n", instruction.l.literal); break;
             case KUTINSTRUCTION_PUSH_CLOSURE:           total_length += snprintf(NULL, 0, " clo : %5d\n", instruction.l.literal); break;
@@ -218,7 +230,7 @@ KutValue kutfunc_debug(KutValue* _self) {
             case KUTINSTRUCTION_PUSH_INTEGER:           total_length += snprintf(NULL, 0, " int : %5d\n", instruction.l.literal); break;
             case KUTINSTRUCTION_PUSH_NIL:               total_length += snprintf(NULL, 0, " \n"); break;
             case KUTINSTRUCTION_PUSH_UNDEFINED:         total_length += snprintf(NULL, 0, " \n"); break;
-            case KUTINSTRUCTION_PUSH_TABLE:             total_length += snprintf(NULL, 0, " \n"); break;
+            case KUTINSTRUCTION_PUSH_TABLE:             total_length += snprintf(NULL, 0, "size: %5d\n", instruction.l.literal); break;
             case KUTINSTRUCTION_RETURN_STACK:           total_length += snprintf(NULL, 0, " \n"); break;
             case KUTINSTRUCTION_POP_CLOSURE:            total_length += snprintf(NULL, 0, " clos: %5d\n", instruction.l.literal); break;
         }
@@ -245,12 +257,12 @@ KutValue kutfunc_debug(KutValue* _self) {
         offset += snprintf(ret->data+offset, ret->len-offset+1, "   %-19s", kutfunc_instructionNames[instruction.r.instruction]);
         switch(instruction.r.instruction) {
             case KUTINSTRUCTION_NO_OPERATION:           offset += snprintf(ret->data+offset, ret->len-offset+1, " \n"); break;
-            case KUTINSTRUCTION_METHODCALL_IR:          offset += snprintf(ret->data+offset, ret->len-offset+1, " reg : %5d args: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
             case KUTINSTRUCTION_METHODCALL_IC:          offset += snprintf(ret->data+offset, ret->len-offset+1, " args: %5d\n", instruction.r.reg0); break;
             case KUTINSTRUCTION_PUSH_REGISTER_2:        offset += snprintf(ret->data+offset, ret->len-offset+1, " reg1: %5d reg2: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
             case KUTINSTRUCTION_PUSH_REGISTER_3:        offset += snprintf(ret->data+offset, ret->len-offset+1, " reg1: %5d reg2: %5d reg3: %5d\n", instruction.r.reg0, instruction.r.reg1, instruction.r.reg2); break;
+            case KUTINSTRUCTION_JUMP:                   offset += snprintf(ret->data+offset, ret->len-offset+1, " offs: %5d\n", instruction.l.literal); break;
+            case KUTINSTRUCTION_JUMP_UNLESS:            offset += snprintf(ret->data+offset, ret->len-offset+1, " offs: %5d\n", instruction.l.literal); break;
             case KUTINSTRUCTION_ASSIGN_REGISTER:        offset += snprintf(ret->data+offset, ret->len-offset+1, " src : %5d dest: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
-            case KUTINSTRUCTION_METHODCALL_RR:          offset += snprintf(ret->data+offset, ret->len-offset+1, " self: %5d ret : %5d args: %5d\n", instruction.r.reg0, instruction.r.reg1, instruction.r.reg2); break;
             case KUTINSTRUCTION_METHODCALL_RC:          offset += snprintf(ret->data+offset, ret->len-offset+1, " ret : %5d args: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
             case KUTINSTRUCTION_LOAD_LITERAL:           offset += snprintf(ret->data+offset, ret->len-offset+1, " reg : %5d lit : %5d\n", instruction.l.reg, instruction.l.literal); break;
             case KUTINSTRUCTION_LOAD_CLOSURE:           offset += snprintf(ret->data+offset, ret->len-offset+1, " reg : %5d clos: %5d\n", instruction.l.reg, instruction.l.literal); break;
@@ -258,10 +270,9 @@ KutValue kutfunc_debug(KutValue* _self) {
             case KUTINSTRUCTION_LOAD_INTEGER:           offset += snprintf(ret->data+offset, ret->len-offset+1, " reg : %5d int : %5d\n", instruction.l.reg, instruction.l.literal); break;
             case KUTINSTRUCTION_LOAD_NIL:               offset += snprintf(ret->data+offset, ret->len-offset+1, " reg : %5d\n", instruction.l.reg); break;
             case KUTINSTRUCTION_LOAD_UNDEFINED:         offset += snprintf(ret->data+offset, ret->len-offset+1, " reg : %5d\n", instruction.l.reg); break;
-            case KUTINSTRUCTION_LOAD_TABLE:             offset += snprintf(ret->data+offset, ret->len-offset+1, " reg : %5d\n", instruction.l.reg); break;
+            case KUTINSTRUCTION_LOAD_TABLE:             offset += snprintf(ret->data+offset, ret->len-offset+1, " reg : %5d size: %5d\n", instruction.l.reg, instruction.l.literal); break;
             case KUTINSTRUCTION_STORE_CLOSURE:          offset += snprintf(ret->data+offset, ret->len-offset+1, " reg : %5d clos: %5d\n", instruction.l.reg, instruction.l.literal); break;
             case KUTINSTRUCTION_PUSH_REGISTER_1:        offset += snprintf(ret->data+offset, ret->len-offset+1, " reg : %5d\n", instruction.r.reg0); break;
-            case KUTINSTRUCTION_METHODCALL_PR:          offset += snprintf(ret->data+offset, ret->len-offset+1, " self: %5d args: %5d\n", instruction.r.reg0, instruction.r.reg1); break;
             case KUTINSTRUCTION_METHODCALL_PC:          offset += snprintf(ret->data+offset, ret->len-offset+1, " args: %5d\n", instruction.r.reg0); break;
             case KUTINSTRUCTION_PUSH_LITERAL:           offset += snprintf(ret->data+offset, ret->len-offset+1, " lit : %5d\n", instruction.l.literal); break;
             case KUTINSTRUCTION_PUSH_CLOSURE:           offset += snprintf(ret->data+offset, ret->len-offset+1, " clo : %5d\n", instruction.l.literal); break;
@@ -269,7 +280,7 @@ KutValue kutfunc_debug(KutValue* _self) {
             case KUTINSTRUCTION_PUSH_INTEGER:           offset += snprintf(ret->data+offset, ret->len-offset+1, " int : %5d\n", instruction.l.literal); break;
             case KUTINSTRUCTION_PUSH_NIL:               offset += snprintf(ret->data+offset, ret->len-offset+1, " \n"); break;
             case KUTINSTRUCTION_PUSH_UNDEFINED:         offset += snprintf(ret->data+offset, ret->len-offset+1, " \n"); break;
-            case KUTINSTRUCTION_PUSH_TABLE:             offset += snprintf(ret->data+offset, ret->len-offset+1, " \n"); break;
+            case KUTINSTRUCTION_PUSH_TABLE:             offset += snprintf(ret->data+offset, ret->len-offset+1, " size: %5d\n", instruction.l.literal); break;
             case KUTINSTRUCTION_POP_CLOSURE:            offset += snprintf(ret->data+offset, ret->len-offset+1, " clos: %5d", instruction.l.literal); break;
         }
     }
@@ -310,9 +321,6 @@ KutDispatchedFn kutfunc_dispatch(KutValue* self, KutString* message) {
 KutInstruction kutinstruction_noOperation(void) {
     return (KutInstruction){.l = {.instruction = KUTINSTRUCTION_NO_OPERATION, .reg = 0, .literal = 0}};
 }
-KutInstruction kutinstruction_methodcallIR(uint8_t reg, uint8_t args) {
-    return (KutInstruction){.r = {.instruction = KUTINSTRUCTION_METHODCALL_IR, .reg0 = reg, .reg1 = args, .reg2 = 0}};
-}
 KutInstruction kutinstruction_methodcallIC(uint8_t args) {
     return (KutInstruction){.r = {.instruction = KUTINSTRUCTION_METHODCALL_IC, .reg0 = args, .reg1 = 0, .reg2 = 0}};
 }
@@ -322,14 +330,17 @@ KutInstruction kutinstruction_pushRegister2(uint8_t reg1, uint8_t reg2) {
 KutInstruction kutinstruction_pushRegister3(uint8_t reg1, uint8_t reg2, uint8_t reg3) {
     return (KutInstruction){.r = {.instruction = KUTINSTRUCTION_PUSH_REGISTER_3, .reg0 = reg1, .reg1 = reg2, .reg2 = reg3}};
 }
+KutInstruction kutinstruction_jump(uint16_t offset) {
+    return (KutInstruction){.l = {.instruction = KUTINSTRUCTION_JUMP, .reg = 0, .literal = offset}};
+}
+KutInstruction kutinstruction_jumpUnless(uint16_t offset) {
+    return (KutInstruction){.l = {.instruction = KUTINSTRUCTION_JUMP_UNLESS, .reg = 0, .literal = offset}};
+}
 
 // Result is assigned to a register
 
 KutInstruction kutinstruction_assignRegister(uint8_t dest, uint8_t src) {
     return (KutInstruction){.r = {.instruction = KUTINSTRUCTION_ASSIGN_REGISTER, .reg0 = dest, .reg1 = src, .reg2 = 0}};
-}
-KutInstruction kutinstruction_methodcallRR(uint8_t self, uint8_t ret, uint8_t args) {
-    return (KutInstruction){.r = {.instruction = KUTINSTRUCTION_METHODCALL_RR, .reg0 = ret, .reg1 = self, .reg2 = args}};
 }
 KutInstruction kutinstruction_methodcallRC(uint8_t ret, uint8_t args) {
     return (KutInstruction){.r = {.instruction = KUTINSTRUCTION_METHODCALL_RC, .reg0 = ret, .reg1 = args, .reg2 = 0}};
@@ -366,9 +377,6 @@ KutInstruction kutinstruction_storeClosure(uint8_t reg, uint16_t closure) {
 
 KutInstruction kutinstruction_pushRegister1(uint8_t reg) {
     return (KutInstruction){.l = {.instruction = KUTINSTRUCTION_PUSH_REGISTER_1, .reg = reg, .literal = 0}};
-}
-KutInstruction kutinstruction_methodcallPR(uint8_t self, uint8_t args) {
-    return (KutInstruction){.r = {.instruction = KUTINSTRUCTION_METHODCALL_PR, .reg0 = self, .reg1 = 0, .reg2 = 0}};
 }
 KutInstruction kutinstruction_methodcallPC(uint8_t args) {
     return (KutInstruction){.l = {.instruction = KUTINSTRUCTION_METHODCALL_PC, .reg = args, .literal = 0}};

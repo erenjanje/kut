@@ -85,54 +85,60 @@ void test_parser() {
 
 void test_compiler() {
     #include "test.c"
-        // "liste degiskeni [1 2 3 4] olsun\n"
-        // "a degiskeni 5 olsun\n"
-        // "b degiskeni 8 olsun\n"
-        // "liste {x | liste {y | a y +\n"
-        // "} zort\n"
-        // "x 3 +\n}:ile esle\n"
-        // "ekran (3 2 +) yazsin\n\n\n\n";
     const char* bort = test_kut;
     const char* endptr = test_kut+sizeof(test_kut);
     KutASTNode nod = {0};
     KutCompilerInfo root_info;
-    KutTemplateArray arr;
-    KutValueArray literals = {0};
     kutcompiler_new(NULL, &root_info);
+    KutASTNode* nodes = calloc(1, sizeof(nodes[0]));
+    size_t node_count = 0;
     while(bort != endptr) {
-        // printf("\"%s\"\n", bort);
         nod = kutast_newStatement(&bort, endptr);
-        kutcompiler_compileStatement(nod, &root_info);
-        kutast_destroy(nod);
+        nodes = realloc(nodes, (node_count+1)*sizeof(nodes[0]));
+        nodes[node_count] = nod;
+        node_count += 1;
     }
-    KutValue* funcs = calloc(root_info.templates->len, sizeof(funcs[0]));
+    nod = (KutASTNode){
+        .argument_count = 0,
+        .arguments = NULL,
+        .children = nodes,
+        .children_count = node_count,
+        .token = invalid_token,
+        .type = KUTAST_FUNCTION,
+    };
+    kutast_debug(nod, "|   ");
+    kutcompiler_compileFunction(nod, &root_info, false, 0);
+    kutast_destroy(nod);
     for(size_t i = 0; i < root_info.templates->len; i++) {
-        funcs[i] = kutfunc_wrap(kutfunc_new(i == 0 ? NULL : kutfunc_cast(funcs[i-1]), &root_info.templates->data[i]));
-    }
-    for(size_t i = 0; i < root_info.templates->len; i++) {
-        KutString* d = kutstring_cast(kutfunc_debug(&funcs[i]));
-        printf("Template %zu:\n%.*s\n", i, kutstring_format(d));
-        free(d);
-    }
-    for(size_t i = 0; i < root_info.templates->len; i++) {
-        kut_decref(&funcs[i]);
+        printf("Template %zu\n", i);
+        kutfunctemplate_debug(&root_info.templates->data[i]);
+        printf("Literals: [");
+        for(size_t j = 0; j < root_info.templates->data[i].literals->len; j++) {
+            KutValue* self = &root_info.templates->data[i].literals->data[j];
+            KutString* str = NULL;
+            if(self->methods) {
+                str = self->methods->tostring(self, 0);
+            } else {
+                printf("nil");
+                goto zort;
+            }
+            printf("%.*s", kutstring_format(str));
+            KutValue strself = kutstring_wrap(str);
+            kut_decref(&strself);
+zort:
+            if(j != root_info.templates->data[0].literals->len-1) {
+                printf(", ");
+            }
+        }
+        printf("]\n");
+        printf("\n");
         free(root_info.templates->data[i].capture_infos);
         free(root_info.templates->data[i].instructions);
     }
-    free(funcs);
-    printf("Literals: [");
     for(size_t i = 0; i < root_info.templates->data[0].literals->len; i++) {
         KutValue* self = &root_info.templates->data[0].literals->data[i];
-        KutString* str = self->methods->tostring(self, 0);
-        printf("%.*s", kutstring_format(str));
-        KutValue strself = kutstring_wrap(str);
-        kut_decref(&strself);
         kut_decref(self);
-        if(i != root_info.templates->data[0].literals->len-1) {
-            printf(", ");
-        }
     }
-    printf("]\n");
     free(root_info.templates->data[0].literals->data);
     free(root_info.templates->data[0].literals);
     free(root_info.templates->data);

@@ -1,3 +1,11 @@
-liste degiskeni 5 olsun
+liste degiskeni [1 2 3 4] olsun
 toplam degiskeni 0 olsun
-liste {toplam x | toplam x +} sar
+ekran degiskeni "ekran" olsun
+liste icindeki her-bir x icin {
+    toplam (toplam x +) olsun
+}
+eger (toplam 10 esit) ise {
+    ekran "matematik dogru calisiyor" yazsin
+} degilse {
+    ekran "nasil yaw" yazsin
+}
