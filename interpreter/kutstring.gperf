@@ -8,6 +8,5 @@
 %includes
 struct KutDispatchGperfPair
 %%
-=, kutstring_equal
 eşit, kutstring_equal
 kıyasla, kutstring_compare

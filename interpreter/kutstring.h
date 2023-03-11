@@ -27,7 +27,6 @@ bool kutstring_equalCString(KutString* self, const char* other, size_t length);
 bool kutstring_compareString(KutString* self, KutString* other);
 bool kutstring_compareCString(KutString* self, const char* other, size_t length);
 
-KutValue kutstring_equal(KutValue* self, KutTable* args);
 KutValue kutstring_compare(KutValue* self, KutTable* args);
 
 #define kutstring_format(str) (int)((str)->len), (str)->data

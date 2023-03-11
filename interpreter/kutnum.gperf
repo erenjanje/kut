@@ -12,7 +12,6 @@ struct KutDispatchGperfPair
 <=, kutnum_le
 >, kutnum_gt
 >=, kutnum_ge
-eşit, kutnum_equal
 +, kutnum_add
 -, kutnum_sub
 *, kutnum_mul

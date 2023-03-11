@@ -33,7 +33,7 @@
 struct KutDispatchGperfPair;
 #include <string.h>
 
-#define TOTAL_KEYWORDS 20
+#define TOTAL_KEYWORDS 19
 #define MIN_WORD_LENGTH 1
 #define MAX_WORD_LENGTH 13
 #define MIN_HASH_VALUE 1
@@ -62,12 +62,12 @@ kutnum_dispatchHash (register const char *str, register size_t len)
       32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
       32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
       32, 32, 32, 32, 10, 32, 32,  0, 32, 10,
-      32,  0, 32, 32, 32, 15, 32, 32,  5,  5,
+      32, 32, 32, 32, 32, 15, 32, 32,  5,  5,
        0,  5, 32, 32, 32,  5,  0, 32, 32, 32,
       32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
       32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
       32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-      32, 32, 32, 32, 32, 32, 32, 32, 32,  0,
+      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
       32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
       32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
       32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
@@ -103,7 +103,7 @@ kutnum_dispatchLookup (register const char *str, register size_t len)
   static const unsigned char lengthtable[] =
     {
        0,  1,  2,  3,  4,  5,  1,  2,  3,  4,  0,  1,  0,  3,
-       4,  0,  1,  0,  3,  4,  5,  1,  0, 13,  0,  0,  1,  0,
+       4,  0,  1,  0,  3,  4,  0,  1,  0, 13,  0,  0,  1,  0,
        0,  0,  0,  1
     };
   static const struct KutDispatchGperfPair wordlist[] =
@@ -113,49 +113,48 @@ kutnum_dispatchLookup (register const char *str, register size_t len)
       {">", kutnum_gt},
 #line 14 "interpreter/kutnum.gperf"
       {">=", kutnum_ge},
-#line 23 "interpreter/kutnum.gperf"
+#line 22 "interpreter/kutnum.gperf"
       {"tan", kutnum_tan},
-#line 27 "interpreter/kutnum.gperf"
+#line 26 "interpreter/kutnum.gperf"
       {"atan", kutnum_atan},
-#line 28 "interpreter/kutnum.gperf"
+#line 27 "interpreter/kutnum.gperf"
       {"atan2", kutnum_atan2},
 #line 11 "interpreter/kutnum.gperf"
       {"<", kutnum_lt},
 #line 12 "interpreter/kutnum.gperf"
       {"<=", kutnum_le},
-#line 21 "interpreter/kutnum.gperf"
+#line 20 "interpreter/kutnum.gperf"
       {"sin", kutnum_sin},
-#line 29 "interpreter/kutnum.gperf"
+#line 28 "interpreter/kutnum.gperf"
       {"acot", kutnum_acot},
       {"",empty_dispatched},
-#line 20 "interpreter/kutnum.gperf"
+#line 19 "interpreter/kutnum.gperf"
       {"^", kutnum_pow},
       {"",empty_dispatched},
-#line 24 "interpreter/kutnum.gperf"
+#line 23 "interpreter/kutnum.gperf"
       {"cot", kutnum_cot},
-#line 26 "interpreter/kutnum.gperf"
+#line 25 "interpreter/kutnum.gperf"
       {"acos", kutnum_acos},
       {"",empty_dispatched},
-#line 19 "interpreter/kutnum.gperf"
+#line 18 "interpreter/kutnum.gperf"
       {"/", kutnum_div},
       {"",empty_dispatched},
-#line 22 "interpreter/kutnum.gperf"
+#line 21 "interpreter/kutnum.gperf"
       {"cos", kutnum_cos},
-#line 25 "interpreter/kutnum.gperf"
+#line 24 "interpreter/kutnum.gperf"
       {"asin", kutnum_asin},
-#line 15 "interpreter/kutnum.gperf"
-      {"e\305\237it", kutnum_equal},
-#line 17 "interpreter/kutnum.gperf"
+      {"",empty_dispatched},
+#line 16 "interpreter/kutnum.gperf"
       {"-", kutnum_sub},
       {"",empty_dispatched},
-#line 30 "interpreter/kutnum.gperf"
+#line 29 "interpreter/kutnum.gperf"
       {"mutlak-de\304\237er", kutnum_abs},
       {"",empty_dispatched}, {"",empty_dispatched},
-#line 16 "interpreter/kutnum.gperf"
+#line 15 "interpreter/kutnum.gperf"
       {"+", kutnum_add},
       {"",empty_dispatched}, {"",empty_dispatched},
       {"",empty_dispatched}, {"",empty_dispatched},
-#line 18 "interpreter/kutnum.gperf"
+#line 17 "interpreter/kutnum.gperf"
       {"*", kutnum_mul}
     };
 

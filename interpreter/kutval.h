@@ -22,12 +22,14 @@ typedef struct KutMandatoryMethodsTable KutMandatoryMethodsTable;
 typedef KutString* (*KutToStringMethodFn)(KutValue* self, size_t indent);
 typedef void (*KutAddrefMethodFn)(KutValue* self);
 typedef void (*KutDecrefMethodFn)(KutValue* self);
+typedef bool (*KutEqualMethodFn)(KutValue* self, KutValue* other);
 
 struct KutMandatoryMethodsTable {
     KutDispatchFn dispatch;
     KutAddrefMethodFn addref;
     KutDecrefMethodFn decref;
     KutToStringMethodFn tostring;
+    KutEqualMethodFn equal;
 };
 
 KutValue empty_dispatched(KutValue* self, KutTable* args); // TODO: Remove me!
@@ -80,6 +82,7 @@ static inline bool kutboolean_cast(KutValue val) { return istype(val, kutboolean
 void kut_addref(KutValue* self);
 void kut_decref(KutValue* self);
 KutString* kut_tostring(KutValue* self, size_t indent);
+bool kut_equal(KutValue* self, KutValue* other);
 
 void kut_set(KutValue* destination, KutValue* source);
 void kut_swap(KutValue* val1, KutValue* val2);

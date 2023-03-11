@@ -176,6 +176,12 @@ size_t kutcompiler_pushInstruction(KutCompilerInfo* info, KutInstruction instruc
 size_t kutcompiler_pushLiteral(KutCompilerInfo* info, KutValue val) {
     KutValue** literals = &info->templates->data[info->template_pos].literals->data;
     size_t* literal_count = &info->templates->data[info->template_pos].literals->len;
+    for(size_t i = 0; i < *literal_count; i++) {
+        if(kut_equal(&((*literals)[i]), &val)) {
+            kut_decref(&val);
+            return i;
+        }
+    }
     *literals = realloc(*literals, (*literal_count+1)*sizeof((*literals)[0]));
     (*literals)[*literal_count] = val;
     *literal_count += 1;

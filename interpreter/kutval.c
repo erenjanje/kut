@@ -69,6 +69,15 @@ KutString* kut_tostring(KutValue* self, size_t indent) {
     return val;
 }
 
+bool kut_equal(KutValue* self, KutValue* other) {
+    if(self->methods and self->methods->equal) {
+        return self->methods->equal(self, other);
+    } else if(other->methods and other->methods->equal) {
+        return other->methods->equal(self, other);
+    }
+    return true; // Both nil
+}
+
 void kut_set(KutValue* destination, KutValue* source) {
     if((destination == NULL) or (source == NULL) or (destination == source)) {
         return;

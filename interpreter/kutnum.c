@@ -39,14 +39,6 @@ static KutValue kutnum_ge(KutValue* data, KutTable* args) {
     return kutboolean_wrap(num >= kutnumber_cast(args->data[0]));
 }
 
-static KutValue kutnum_equal(KutValue* data, KutTable* args) {
-    double num = data ? kutnumber_cast(*data) : 0.0;
-    if(args->len < 1 or not istype(args->data[0], kutnumber)) {
-        return kut_undefined;
-    }
-    return kutboolean_wrap(num == kutnumber_cast(args->data[0]));
-}
-
 static KutValue kutnum_add(KutValue* data, KutTable* args) {
     double num = data ? kutnumber_cast(*data) : 0.0;
     if(args->len < 1 or not istype(args->data[0], kutnumber)) {
@@ -149,6 +141,12 @@ static KutString* kutnum_tostring(KutValue* data, size_t indent) {
     return ret;
 }
 
+static bool kutnum_equal(KutValue* data, KutValue* other) {
+    double num = data ? kutnumber_cast(*data) : nan("notvalid");
+    double other_num = other ? kutnumber_cast(*other) : nan("notvalid");
+    return num == other_num;
+}
+
 #include "kutnum.methods"
 
 #include "kutstring.h"
@@ -165,4 +163,5 @@ const KutMandatoryMethodsTable kutnumber_methods = {
     .addref = NULL,
     .decref = NULL,
     .tostring = kutnum_tostring,
+    .equal = kutnum_equal,
 };

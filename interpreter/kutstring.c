@@ -59,17 +59,6 @@ static void kutstring_decref(KutValue* _self) {
     self->reference_count -= 1;
 }
 
-KutValue kutstring_equal(KutValue* _self, KutTable* args) {
-    KutString* self = _self ? kutstring_cast(*_self) : NULL;
-    if(self == NULL) {
-        return kut_undefined;
-    }
-    if(not checkarg(args, 0, &kutstring_methods)) {
-        return kut_undefined;
-    }
-    return kutboolean_wrap(kutstring_equalString(self, (KutString*)args->data[0].data.data));
-}
-
 bool kutstring_equalString(KutString* self, KutString* other) {
     return kutstring_equalCString(self, other->data, other->len);
 }
@@ -109,6 +98,15 @@ static KutString* kutstring_tostring(KutValue* _self, size_t indent) {
     return ret;
 }
 
+static bool kutstring_equal(KutValue* _self, KutValue* _other) {
+    KutString* self = _self ? kutstring_cast(*_self) : NULL;
+    KutString* other = _other ? kutstring_cast(*_other) : NULL;
+    if(self == NULL or other == NULL) {
+        return false;
+    }
+    return self->len == other->len and (memcmp(self->data, other->data, self->len) == 0);
+}
+
 #include "kutstring.methods"
 
 KutDispatchedFn kutstring_dispatch(KutValue* self, KutString* message) {
@@ -123,4 +121,5 @@ const KutMandatoryMethodsTable kutstring_methods = {
     .addref = kutstring_addref,
     .decref = kutstring_decref,
     .tostring = kutstring_tostring,
+    .equal = kutstring_equal,
 };
