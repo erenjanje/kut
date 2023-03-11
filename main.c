@@ -122,7 +122,7 @@ void test_compiler() {
                 printf("nil");
                 goto zort;
             }
-            printf("%.*s", kutstring_format(str));
+            printf("%zu:%.*s", j,  kutstring_format(str));
             KutValue strself = kutstring_wrap(str);
             kut_decref(&strself);
 zort:
