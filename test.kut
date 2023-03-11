@@ -7,5 +7,5 @@ liste icindeki her-bir x icin {
 eger (toplam 10 esit) ise {
     ekran "matematik dogru calisiyor" yazsin
 } degilse {
-    ekran "nasil yaw" yazsin
+    ekran {toplam 2 ^} yazsin
 }
