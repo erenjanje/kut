@@ -36,10 +36,49 @@ static void kutvm_setRegister(KutFunc* func, size_t reg, KutValue val) {
     setter->reference_count = ref;
 }
 
+static void kutvm_methodcall(KutFunc* func, KutValue* ret, size_t arg_count) {
+    KutTable args = {
+        .capacity = arg_count-2,
+        .len = arg_count-2,
+        .reference_count = 0,
+        .data = &func->call_stack->data[func->call_stack->len - arg_count + 1], // +1 from self, we don't give self inside the args table, -1 from message
+    };
+    KutValue* self = &func->call_stack->data[func->call_stack->len - arg_count];
+    KutValue message_val = func->call_stack->data[func->call_stack->len-1];
+    KutString* message = kutstring_cast(message_val);
+    if(message == NULL) {
+        fprintf(stderr, "Message is not a string!\n");
+        exit(EXIT_FAILURE);
+    }
+    KutValue result = self->methods->dispatch(self, message)(self, &args);
+    func->call_stack->len -= arg_count;
+    for(size_t i = 0; i < arg_count; i++) {
+        kut_decref(&func->call_stack->data[i]);
+    }
+    // TODO: Add error handling
+
+    if(ret != NULL) {
+        kut_set(ret, &result);
+    } else {
+        kut_decref(&result);
+    }
+}
+
+static void kutvm_newtable(KutFunc* func, KutValue* ret, size_t length) {
+    func->call_stack->len -= length;
+    KutTable* table = kuttable_new(length);
+    table->len = length;
+    for(size_t i = 0; i < length; i++) {
+        table->data[i] = func->call_stack->data[i];
+    }
+    *ret = kuttable_wrap(table);
+}
+
 bool kutvm_noOperation(KutFunc* func, KutInstruction instruction) {
     return false;
 }
 bool kutvm_methodcallIC(KutFunc* func, KutInstruction instruction) {
+    kutvm_methodcall(func, NULL, instruction.r.reg0);
     return false;
 }
 bool kutvm_pushRegister2(KutFunc* func, KutInstruction instruction) {
@@ -57,6 +96,8 @@ bool kutvm_assignRegister(KutFunc* func, KutInstruction instruction) {
     return false;
 }
 bool kutvm_methodcallRC(KutFunc* func, KutInstruction instruction) {
+    KutValue* ret_reg = kutvm_getRegisterPointer(func, instruction.r.reg0);
+    kutvm_methodcall(func, ret_reg, instruction.r.reg1);
     return false;
 }
 bool kutvm_loadLiteral(KutFunc* func, KutInstruction instruction) {
@@ -89,39 +130,58 @@ bool kutvm_loadUndefined(KutFunc* func, KutInstruction instruction) {
     return false;
 }
 bool kutvm_loadTable(KutFunc* func, KutInstruction instruction) {
+    kutvm_newtable(func, &func->registers[instruction.l.reg], instruction.l.literal);
     return false;
 }
 bool kutvm_storeClosure(KutFunc* func, KutInstruction instruction) {
     return false;
 }
 bool kutvm_pushRegister1(KutFunc* func, KutInstruction instruction) {
+    __kuttable_append(func->call_stack, func->registers[instruction.r.reg0]);
     return false;
 }
 bool kutvm_methodcallPC(KutFunc* func, KutInstruction instruction) {
+    KutValue ret = kut_undefined;
+    kutvm_methodcall(func, &ret, instruction.r.reg0);
+    __kuttable_append(func->call_stack, ret);
     return false;
 }
 bool kutvm_pushLiteral(KutFunc* func, KutInstruction instruction) {
+    __kuttable_append(func->call_stack, func->template->literals->data[instruction.l.literal]);
     return false;
 }
 bool kutvm_pushClosure(KutFunc* func, KutInstruction instruction) {
+    __kuttable_append(func->call_stack, *kutreference_cast(func->closures[instruction.l.literal]));
     return false;
 }
 bool kutvm_pushTemplate(KutFunc* func, KutInstruction instruction) {
+    KutValue tmp = kutfunc_wrap(kutfunc_new(func, &func->template->function_templates->data[instruction.l.literal]));
+    __kuttable_append(func->call_stack, tmp);
+    kut_decref(&tmp);
     return false;
 }
 bool kutvm_pushInteger(KutFunc* func, KutInstruction instruction) {
+    __kuttable_append(func->call_stack, kutnumber_wrap(instruction.l.literal));
     return false;
 }
 bool kutvm_pushNil(KutFunc* func, KutInstruction instruction) {
+    __kuttable_append(func->call_stack, kut_nil);
     return false;
 }
 bool kutvm_pushUndefined(KutFunc* func, KutInstruction instruction) {
+    __kuttable_append(func->call_stack, kut_undefined);
     return false;
 }
 bool kutvm_pushTable(KutFunc* func, KutInstruction instruction) {
+    KutValue tmp = kut_undefined;
+    kutvm_newtable(func, &tmp, instruction.l.literal);
     return false;
 }
 bool kutvm_popClosure(KutFunc* func, KutInstruction instruction) {
+    func->call_stack->len -= 1;
+    KutValue popped = func->call_stack->data[func->call_stack->len];
+    kut_set(kutreference_cast(func->closures[instruction.l.literal]), &popped);
+    kut_decref(&popped);
     return false;
 }
 

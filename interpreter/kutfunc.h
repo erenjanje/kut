@@ -150,7 +150,7 @@ KutValue kutfunc_wrap(KutFunc* self);
 KutFunc* kutfunc_cast(KutValue val);
 
 KutValue kutfunc_run(KutValue* self, KutTable* args);
-KutValue kutfunc_debug(KutValue* _self);
+KutValue kutfunc_debug(KutValue* _self, size_t instruction_pos);
 
 void kutfunctemplate_debug(KutFuncTemplate* template);
 

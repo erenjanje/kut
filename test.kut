@@ -4,8 +4,3 @@ ekran degiskeni "ekran" olsun
 liste icindeki her-bir x icin {
     toplam (toplam x +) olsun
 }
-eger (toplam 10 esit) ise {
-    ekran "matematik dogru calisiyor" yazsin
-} degilse {
-    ekran {toplam 2 ^} yazsin
-}

@@ -86,12 +86,11 @@ KutValue kutfunc_run(KutValue* _self, KutTable* args) {
     memcpy(self->registers, args->data, args->len*sizeof(args->data[0]));
     bool finished = false;
     for(size_t i = 0; not finished and i < self->template->instruction_count; i++) {
-        printf("Instruction %zu:\n", i);
-        KutString* debg = kutstring_cast(kutfunc_debug(_self));
-        printf("%.*s\n\n", kutstring_format(debg));
-        free(debg);
         KutInstruction instruction = self->template->instructions[i];
         finished = instruction_handlers[instruction.r.instruction](self, instruction);
+        KutString* debg = kutstring_cast(kutfunc_debug(_self, i));
+        printf("%.*s\n\n", kutstring_format(debg));
+        free(debg);
     }
     for(size_t i = 0; i < self->template->register_count; i++) {
         kut_decref(&self->registers[i]);
@@ -186,7 +185,7 @@ void kutfunctemplate_debug(KutFuncTemplate* template) {
     }
 }
 
-KutValue kutfunc_debug(KutValue* _self) {
+KutValue kutfunc_debug(KutValue* _self, size_t instruction_pos) {
     KutFunc* self = _self ? kutfunc_cast(*_self) : NULL;
     if(self == NULL) {
         return kut_undefined;
@@ -254,7 +253,7 @@ KutValue kutfunc_debug(KutValue* _self) {
     offset += 1;
     for(size_t i = 0; i < self->template->instruction_count; i++) {
         KutInstruction instruction = self->template->instructions[i];
-        offset += snprintf(ret->data+offset, ret->len-offset+1, "   %-19s", kutfunc_instructionNames[instruction.r.instruction]);
+        offset += snprintf(ret->data+offset, ret->len-offset+1, "%s  %-19s", i == instruction_pos ? ">" : " ",  kutfunc_instructionNames[instruction.r.instruction]);
         switch(instruction.r.instruction) {
             case KUTINSTRUCTION_NO_OPERATION:           offset += snprintf(ret->data+offset, ret->len-offset+1, " \n"); break;
             case KUTINSTRUCTION_METHODCALL_IC:          offset += snprintf(ret->data+offset, ret->len-offset+1, " args: %5d\n", instruction.r.reg0); break;

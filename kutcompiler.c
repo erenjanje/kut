@@ -20,7 +20,7 @@ static inline void kutcompiler_compile(KutASTNode node, KutCompilerInfo* info, b
 #define KUTCOMPILER_LOOP_MESSAGE_POS 1
 
 KutString* kutcompiler_ifMessage = kutstring_literal("kosulla");
-KutString* kutcompiler_loopMessage = kutstring_literal("don");
+KutString* kutcompiler_loopMessage = kutstring_literal("dön");
 
 void kutcompiler_new(KutCompilerInfo* context, KutCompilerInfo* info) {
     *info = (KutCompilerInfo) {
@@ -43,6 +43,7 @@ void kutcompiler_new(KutCompilerInfo* context, KutCompilerInfo* info) {
     info->template_pos = info->templates->len;
     memset(&info->templates->data[info->template_pos], 0, sizeof(info->templates->data[0]));
     info->templates->data[info->template_pos].literals = arr;
+    info->templates->data[info->template_pos].function_templates = info->templates;
     info->templates->len += 1;
 }
 

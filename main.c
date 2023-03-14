@@ -109,6 +109,10 @@ void test_compiler() {
     kutast_debug(nod, "|   ");
     kutcompiler_compileFunction(nod, &root_info, false, 0);
     kutast_destroy(nod);
+    KutFunc* root = kutfunc_new(NULL, &root_info.templates->data[1]);
+    KutValue root_wrapped = kutfunc_wrap(root);
+    kutfunc_run(&root_wrapped, empty_table);
+    kut_decref(&root_wrapped);
     for(size_t i = 0; i < root_info.templates->len; i++) {
         printf("Template %zu\n", i);
         kutfunctemplate_debug(&root_info.templates->data[i]);
